@@ -95,7 +95,9 @@ export default function ManageProducts({ store }) {
       }
     } catch (err) {
       console.error(err);
-      alert("Server bilan aloqada xatolik.");
+      // Server qaytargan asl xatolikni ushlab, ekranga chiqaramiz
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || err.message;
+      alert("Xatolik sababi: " + errorMsg);
     } finally {
       setSubmitting(false);
     }
