@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getProducts, createOrder } from '../api/backend';
 import ProductCard from '../components/ProductCard';
+import Cart from '../components/Cart'; // <-- Yangi Cart komponentini uladik
 
 export default function StoreFront({ store }) {
   const [products, setProducts] = useState([]);
@@ -143,71 +144,18 @@ export default function StoreFront({ store }) {
         </div>
       )}
 
-      {/* Savatcha Modali (Oynasi) */}
-      {isCartOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center">
-          <div className="bg-white w-full max-w-md rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-gray-800">Buyurtmangiz</h2>
-              <button
-                onClick={() => setIsCartOpen(false)}
-                className="text-gray-400 font-bold text-xl px-2"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 mb-4">
-              {cart.map((item) => (
-                <div key={item.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
-                  <div>
-                    <p className="font-medium text-sm text-gray-800">{item.title}</p>
-                    <p className="text-xs text-gray-500">
-                      {item.price.toLocaleString('uz-UZ')} x {item.quantity} = {(item.price * item.quantity).toLocaleString('uz-UZ')} so'm
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleRemoveFromCart(item.id)}
-                      className="w-7 h-7 bg-white border rounded-lg text-gray-600 font-bold flex items-center justify-center"
-                    >
-                      -
-                    </button>
-                    <span className="text-sm font-semibold">{item.quantity}</span>
-                    <button
-                      onClick={() => handleAddToCart(item)}
-                      className="w-7 h-7 bg-white border rounded-lg text-gray-600 font-bold flex items-center justify-center"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t pt-3 mb-4">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Bog'lanish uchun telefon raqamingiz:
-              </label>
-              <input
-                type="text"
-                placeholder="+998 90 123 45 67"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                className="w-full border rounded-xl p-3 text-sm outline-none focus:border-blue-600"
-              />
-            </div>
-
-            <button
-              onClick={handleCheckout}
-              disabled={submitting}
-              className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition disabled:opacity-50"
-            >
-              {submitting ? "Yuborilmoqda..." : "Buyurtmani tasdiqlash"}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Alohida ajratilgan Cart (Savatcha) komponentini chaqiramiz */}
+      <Cart 
+        cart={cart}
+        isCartOpen={isCartOpen}
+        setIsCartOpen={setIsCartOpen}
+        onAddToCart={handleAddToCart}
+        onRemoveFromCart={handleRemoveFromCart}
+        onCheckout={handleCheckout}
+        customerPhone={customerPhone}
+        setCustomerPhone={setCustomerPhone}
+        submitting={submitting}
+      />
     </div>
   );
 }
