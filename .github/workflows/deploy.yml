@@ -2,7 +2,7 @@ name: Deploy Vite React App to GitHub Pages
 
 on:
   push:
-    branches: ['main'] # Agar sizda tarmoq nomi master bo'lsa, 'master' deb o'zgartiring
+    branches: ['main'] # Agar tarmog'ingiz master bo'lsa, 'master' qiling
 
 permissions:
   contents: read
@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          # cache: 'npm' qatori olib tashlandi
 
       - name: Install dependencies
         run: npm install
