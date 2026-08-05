@@ -12,7 +12,7 @@ export default function AdminDashboard({ store }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (store?.id) {
+    if (store?.store_id) {
       loadStats();
     }
   }, [store]);
@@ -22,8 +22,8 @@ export default function AdminDashboard({ store }) {
       setLoading(true);
       // Backend'dan mahsulotlar va buyurtmalarni bir vaqtda yuklab olamiz
       const [productsRes, ordersRes] = await Promise.all([
-        getProducts(store.id),
-        getOrders(store.id)
+        getProducts(store.store_id),
+        getOrders(store.store_id)
       ]);
 
       const products = productsRes.success ? productsRes.products : [];
