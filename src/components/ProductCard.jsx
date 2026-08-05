@@ -8,7 +8,7 @@ export default function ProductCard({ product, onAddToCart, cartQuantity }) {
         {product.image_url ? (
           <img
             src={product.image_url}
-            alt={product.title}
+            alt={product.name || product.title}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -27,9 +27,19 @@ export default function ProductCard({ product, onAddToCart, cartQuantity }) {
 
       {/* Mahsulot Ma'lumotlari */}
       <div className="flex-1">
+        {/* Nomi (name yoki title ni tekshiramiz) */}
         <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 leading-tight mb-1">
-          {product.title}
+          {product.name || product.title}
         </h3>
+
+        {/* Tavsifi */}
+        {product.description && (
+          <p className="text-gray-500 text-xs mb-2 line-clamp-2">
+            {product.description}
+          </p>
+        )}
+
+        {/* Narxi */}
         <p className="text-blue-600 font-bold text-base mb-3">
           {Number(product.price).toLocaleString('uz-UZ')} so'm
         </p>
