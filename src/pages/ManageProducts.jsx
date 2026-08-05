@@ -31,7 +31,7 @@ export default function ManageProducts({ store }) {
       }
     } catch (err) {
       console.error("Mahsulotlarni olishda xatolik:", err);
-    } fontally {
+    } finally {
       setLoading(false);
     }
   };
