@@ -12,14 +12,14 @@ export default function StoreFront({ store }) {
   const [customerPhone, setCustomerPhone] = useState('');
 
   useEffect(() => {
-    if (store?.id) {
+    if (store?.store_id) {
       loadProducts();
     }
   }, [store]);
 
   const loadProducts = async () => {
     try {
-      const res = await getProducts(store.id);
+      const res = await getProducts(store.store_id);
       if (res.success) {
         setProducts(res.products || []);
       }
@@ -80,7 +80,7 @@ export default function StoreFront({ store }) {
         total_price: totalAmount
       };
 
-      const res = await createOrder(store.id, orderData);
+      const res = await createOrder(store.store_id, orderData);
       if (res.success) {
         alert("Buyurtmangiz muvaffaqiyatli qabul qilindi! Do'kon egasi tez orada aloqaga chiqadi.");
         setCart([]);
