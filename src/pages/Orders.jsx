@@ -8,7 +8,7 @@ export default function Orders({ store }) {
   const [updatingId, setUpdatingId] = useState(null); // Qaysi buyurtma yangilanayotganini kuzatish uchun
 
   useEffect(() => {
-    if (store?.id) {
+    if (store?.store_id) {
       fetchOrders();
     }
   }, [store]);
@@ -16,7 +16,7 @@ export default function Orders({ store }) {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await getOrders(store.id);
+      const res = await getOrders(store.store_id);
       if (res.success) {
         // Yangi buyurtmalar eng tepada chiqishi uchun vaqt bo'yicha teskari tartiblaymiz
         const sortedOrders = (res.orders || []).sort((a, b) => {
@@ -36,7 +36,7 @@ export default function Orders({ store }) {
 
     setUpdatingId(orderId);
     try {
-      const res = await updateOrderStatus(store.id, orderId, newStatus);
+      const res = await updateOrderStatus(store.store_id, orderId, newStatus);
       if (res.success) {
         // Ekranda darhol o'zgartirish
         setOrders(orders.map(order => 
