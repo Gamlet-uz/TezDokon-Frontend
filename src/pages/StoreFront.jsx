@@ -73,7 +73,8 @@ export default function StoreFront({ store }) {
         },
         items: cart.map(item => ({
           id: item.id,
-          title: item.title,
+          name: item.name || item.title, 
+          title: item.name || item.title,
           price: item.price,
           quantity: item.quantity
         })),
