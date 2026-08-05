@@ -27,7 +27,7 @@ export default function App() {
         const urlStoreId = queryParams.get('store_id');
 
         // Telegram foydalanuvchi ma'lumotlarini olish
-        const tgUser = tg?.initDataUnsafe?.user;
+        const tgUser = tg?.initDataUnsafe?.user || { id: 11223344, first_name: "Test", username: "test_admin" };
         setUser(tgUser);
 
         if (urlStoreId) {
