@@ -69,6 +69,7 @@ export default function ManageProducts({ store }) {
     try {
       const payload = {
         title: formData.title,
+        name: formData.title,
         price: Number(formData.price),
         image_url: formData.image_url,
         description: formData.description
