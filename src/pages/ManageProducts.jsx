@@ -17,7 +17,7 @@ export default function ManageProducts({ store }) {
   });
 
   useEffect(() => {
-    if (store?.id) {
+    if (store?.store_id) {
       fetchProducts();
     }
   }, [store]);
@@ -25,7 +25,7 @@ export default function ManageProducts({ store }) {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await getProducts(store.id);
+      const res = await getProducts(store.store_id);
       if (res.success) {
         setProducts(res.products || []);
       }
@@ -76,7 +76,7 @@ export default function ManageProducts({ store }) {
 
       if (editingProduct) {
         // Tahrirlash
-        const res = await updateProduct(store.id, editingProduct.id, payload);
+        const res = await updateProduct(store.store_id, editingProduct.id, payload);
         if (res.success) {
           fetchProducts();
           handleCloseModal();
@@ -85,7 +85,7 @@ export default function ManageProducts({ store }) {
         }
       } else {
         // Yangi qo'shish
-        const res = await addProduct(store.id, payload);
+        const res = await addProduct(store.store_id, payload);
         if (res.success) {
           fetchProducts();
           handleCloseModal();
@@ -107,7 +107,7 @@ export default function ManageProducts({ store }) {
     }
 
     try {
-      const res = await deleteProduct(store.id, productId);
+      const res = await deleteProduct(store.store_id, productId);
       if (res.success) {
         setProducts(products.filter(p => p.id !== productId));
       } else {
