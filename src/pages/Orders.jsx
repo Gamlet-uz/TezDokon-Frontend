@@ -57,26 +57,30 @@ export default function Orders({ store }) {
     return `${d.toLocaleDateString('uz-UZ')} ${d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
-  // Har xil strukturadagi mijoz ma'lumotlarini (ism, telefon) ajratib olish funksiyasi
-  const getCustomerDetails = (order) => {
+  // Har qanday ko'rinishda kelgan mijoz ma'lumotlarini qidirib topish
+  const parseCustomerInfo = (order) => {
     let phone = order.phone || order.phone_number || order.customer_phone || order.contact || order.user_phone;
     let name = order.customer_name || order.name || order.user_name || order.client_name;
 
-    // Agar customer obyekti bo'lsa
     if (order.customer) {
       if (typeof order.customer === 'object') {
         phone = phone || order.customer.phone || order.customer.phone_number;
         name = name || order.customer.name || order.customer.first_name;
       } else if (typeof order.customer === 'string') {
-        // Agar customer String (JSON) bo'lsa
         try {
           const parsed = JSON.parse(order.customer);
           phone = phone || parsed.phone || parsed.phone_number;
           name = name || parsed.name;
         } catch (e) {
-          // Oddiy matn bo'lsa
           name = name || order.customer;
         }
+      }
+    }
+
+    if (order.user) {
+      if (typeof order.user === 'object') {
+        phone = phone || order.user.phone || order.user.phone_number;
+        name = name || order.user.first_name || order.user.name;
       }
     }
 
@@ -110,7 +114,7 @@ export default function Orders({ store }) {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => {
-            const customer = getCustomerDetails(order);
+            const customer = parseCustomerInfo(order);
 
             return (
               <div key={order.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col">
