@@ -40,7 +40,7 @@ export default function ManageProducts({ store }) {
     if (product) {
       setEditingProduct(product);
       setFormData({
-        title: product.title || '',
+        title: product.name || product.title || '', // <--- Shu yer to'g'rilandi
         price: product.price || '',
         image_url: product.image_url || '',
         description: product.description || ''
@@ -168,7 +168,7 @@ export default function ManageProducts({ store }) {
             >
               <div className="w-14 h-14 bg-gray-100 rounded-xl overflow-hidden shrink-0 relative">
                 {product.image_url ? (
-                  <img src={product.image_url} alt={product.title} className="w-full h-full object-cover" />
+                  <img src={product.image_url} alt={product.name || product.title} className="w-full h-full object-cover" /> // <--- Shu yer to'g'rilandi
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     <ImageIcon size={20} />
@@ -177,7 +177,7 @@ export default function ManageProducts({ store }) {
               </div>
 
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 text-sm truncate">{product.title}</h3>
+                <h3 className="font-semibold text-gray-800 text-sm truncate">{product.name || product.title}</h3> {/* <--- Shu yer to'g'rilandi */}
                 <p className="text-blue-600 font-bold text-xs mt-0.5">
                   {Number(product.price).toLocaleString('uz-UZ')} so'm
                 </p>
