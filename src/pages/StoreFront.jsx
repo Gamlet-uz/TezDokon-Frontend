@@ -100,17 +100,24 @@ export default function StoreFront({ store }) {
       const tg = window.Telegram?.WebApp;
       const tgUser = tg?.initDataUnsafe?.user;
 
+      // Ismni har qanday holatda ham aniqlash (Telegramdan yoki oddiy kiritishdan)
+      const customerName = tgUser?.first_name 
+        ? `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() 
+        : (tgUser?.username ? `@${tgUser.username}` : "Mijoz");
+
       const orderData = {
         customer: {
-          telegram_id: tgUser?.id || 'anon',
-          name: tgUser ? `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() : 'Mijoz',
-          username: tgUser?.username || '',
+          telegram_id: tgUser?.id || 'browser_user',
+          name: customerName,
+          username: tgUser?.username || 'browser_user',
           phone: customerPhone
         },
-        // Bot va Admin Panel ba'zan raqamni to'g'ridan-to'g'ri tashqaridan o'qiydi:
+        // Backend va Admin panel uchun barcha mumkin bo'lgan kalitlar:
+        name: customerName,
+        customer_name: customerName,
         phone: customerPhone, 
-        customer_phone: customerPhone,
         phone_number: customerPhone,
+        customer_phone: customerPhone,
         
         items: cart.map(item => ({
           id: item.id,
@@ -127,7 +134,7 @@ export default function StoreFront({ store }) {
         alert("Buyurtmangiz muvaffaqiyatli qabul qilindi! Do'kon egasi tez orada aloqaga chiqadi.");
         setCart([]);
         setIsCartOpen(false);
-        if (tg) tg.close();
+        if (tg?.close) tg.close();
       } else {
         alert("Buyurtma yuborishda xatolik yuz berdi.");
       }
