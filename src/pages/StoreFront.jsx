@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { getProducts, createOrder } from '../api/backend';
 import ProductCard from '../components/ProductCard';
-import Cart from '../components/Cart'; // <-- Yangi Cart komponentini uladik
-import ProductModal from '../components/ProductModal'; // Yoki qaysi papkaga ochgan bo'lsangiz shunga qarab
+import Cart from '../components/Cart'; 
+import ProductModal from '../components/ProductModal'; 
 
 export default function StoreFront({ store }) {
   const [products, setProducts] = useState([]);
@@ -10,7 +10,9 @@ export default function StoreFront({ store }) {
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [customerPhone, setCustomerPhone] = useState('');
+  
+  // Boshlang'ich qiymatni +998 qilib belgilaymiz
+  const [customerPhone, setCustomerPhone] = useState('+998 ');
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
@@ -55,9 +57,41 @@ export default function StoreFront({ store }) {
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Telefon raqamni formatlaydigan funksiya
+  const handleSetPhone = (val) => {
+    let str = typeof val === 'string' ? val : (val?.target?.value || '');
+    
+    // Faqat raqamlarni ajratib olamiz
+    let numbers = str.replace(/[^\d]/g, '');
+    
+    // Agar foydalanuvchi hammasini o'chirib tashlasa, yana +998 qilib qo'yamiz
+    if (numbers === '' || numbers === '998') {
+      setCustomerPhone('+998 ');
+      return;
+    }
+    
+    // 998 bilan boshlanmasa, qo'shib qo'yamiz
+    if (!numbers.startsWith('998')) {
+      numbers = '998' + numbers;
+    }
+    
+    // Maksimal 12 ta raqam (998 90 123 45 67)
+    numbers = numbers.slice(0, 12);
+    
+    // Formatlash (Bo'sh joylarni qo'shib chiqish)
+    let formatted = '+998';
+    if (numbers.length > 3) formatted += ' ' + numbers.slice(3, 5);
+    if (numbers.length > 5) formatted += ' ' + numbers.slice(5, 8);
+    if (numbers.length > 8) formatted += ' ' + numbers.slice(8, 10);
+    if (numbers.length > 10) formatted += ' ' + numbers.slice(10, 12);
+
+    setCustomerPhone(formatted);
+  };
+
   const handleCheckout = async () => {
-    if (!customerPhone.trim()) {
-      alert("Iltimos, telefon raqamingizni kiriting!");
+    // Raqam to'liq 12 ta son (998 va 9 ta raqam) ekanligini tekshiramiz
+    if (!customerPhone || customerPhone.replace(/[^\d]/g, '').length !== 12) {
+      alert("Iltimos, telefon raqamingizni to'liq kiriting! (Masalan: +998 90 123 45 67)");
       return;
     }
 
@@ -73,6 +107,11 @@ export default function StoreFront({ store }) {
           username: tgUser?.username || '',
           phone: customerPhone
         },
+        // Bot va Admin Panel ba'zan raqamni to'g'ridan-to'g'ri tashqaridan o'qiydi:
+        phone: customerPhone, 
+        customer_phone: customerPhone,
+        phone_number: customerPhone,
+        
         items: cart.map(item => ({
           id: item.id,
           name: item.name || item.title, 
@@ -88,7 +127,7 @@ export default function StoreFront({ store }) {
         alert("Buyurtmangiz muvaffaqiyatli qabul qilindi! Do'kon egasi tez orada aloqaga chiqadi.");
         setCart([]);
         setIsCartOpen(false);
-        if (tg) tg.close(); // Buyurtma muvaffaqiyatli bo'lsa, Telegram Web App'ni avtomatik yopadi
+        if (tg) tg.close();
       } else {
         alert("Buyurtma yuborishda xatolik yuz berdi.");
       }
@@ -124,16 +163,16 @@ export default function StoreFront({ store }) {
                 key={product.id}
                 product={product}
                 onAddToCart={handleAddToCart}
-                onRemoveFromCart={handleRemoveFromCart} // <--- Shuni qo'shdik!
+                onRemoveFromCart={handleRemoveFromCart} 
                 cartQuantity={cartItem ? cartItem.quantity : 0}
-                onClick={setSelectedProduct}            // <--- Shuni qo'shdik!
+                onClick={setSelectedProduct}            
               />
             );
           })}
         </div>
       )}
 
-      {/* Savatcha paneli (Pastda qalqib chiquvchi) */}
+      {/* Savatcha paneli */}
       {cart.length > 0 && (
         <div className="fixed bottom-4 left-4 right-4 max-w-md mx-auto bg-blue-600 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between z-30">
           <div>
@@ -149,7 +188,7 @@ export default function StoreFront({ store }) {
         </div>
       )}
 
-      {/* Alohida ajratilgan Cart (Savatcha) komponentini chaqiramiz */}
+      {/* Cart (Savatcha) komponentiga formatlaydigan funksiyani uzatamiz */}
       <Cart 
         cart={cart}
         isCartOpen={isCartOpen}
@@ -158,10 +197,11 @@ export default function StoreFront({ store }) {
         onRemoveFromCart={handleRemoveFromCart}
         onCheckout={handleCheckout}
         customerPhone={customerPhone}
-        setCustomerPhone={setCustomerPhone}
+        setCustomerPhone={handleSetPhone} // <--- Oddiy qiymat o'rniga maxsus formatlovchini beramiz
         submitting={submitting}
       />
-      {/* Mahsulot bosilganda chiqadigan oyna */}
+      
+      {/* Mahsulot modal oynasi */}
       <ProductModal 
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
