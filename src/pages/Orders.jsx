@@ -57,6 +57,35 @@ export default function Orders({ store }) {
     return `${d.toLocaleDateString('uz-UZ')} ${d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
+  // Har xil strukturadagi mijoz ma'lumotlarini (ism, telefon) ajratib olish funksiyasi
+  const getCustomerDetails = (order) => {
+    let phone = order.phone || order.phone_number || order.customer_phone || order.contact || order.user_phone;
+    let name = order.customer_name || order.name || order.user_name || order.client_name;
+
+    // Agar customer obyekti bo'lsa
+    if (order.customer) {
+      if (typeof order.customer === 'object') {
+        phone = phone || order.customer.phone || order.customer.phone_number;
+        name = name || order.customer.name || order.customer.first_name;
+      } else if (typeof order.customer === 'string') {
+        // Agar customer String (JSON) bo'lsa
+        try {
+          const parsed = JSON.parse(order.customer);
+          phone = phone || parsed.phone || parsed.phone_number;
+          name = name || parsed.name;
+        } catch (e) {
+          // Oddiy matn bo'lsa
+          name = name || order.customer;
+        }
+      }
+    }
+
+    return {
+      phone: phone || null,
+      name: name || "Mijoz"
+    };
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 text-gray-500">
@@ -81,18 +110,12 @@ export default function Orders({ store }) {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => {
-            
-            // XATOLIKNI QIDIRISH UCHUN KONSOLGA CHIQARAMIZ:
-            console.log("Diqqat! Backenddan kelgan buyurtma obyekti:", order);
-
-            // Ehtimoliy barcha variantlarni tekshiramiz
-            const phone = order.customer?.phone || order.phone || order.customer_phone || order.phone_number || order.user?.phone || order.contact || order.client_phone;
-            const customerName = order.customer?.name || order.customer_name || order.name || order.user?.name || order.user?.first_name || order.client_name || "Noma'lum mijoz";
+            const customer = getCustomerDetails(order);
 
             return (
               <div key={order.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col">
                 
-                {/* Sarlavha qismi: Holati va Vaqti */}
+                {/* Sarlavha: Holati va Vaqti */}
                 <div className="flex justify-between items-start border-b pb-3 mb-3">
                   <div>
                     <p className="text-[10px] text-gray-400 font-medium mb-1">
@@ -128,14 +151,14 @@ export default function Orders({ store }) {
                   <div className="flex items-center gap-2 mb-2">
                     <User size={14} className="text-gray-400" />
                     <span className="text-xs font-semibold text-gray-700">
-                      {customerName}
+                      {customer.name}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone size={14} className="text-gray-400" />
-                    {phone ? (
-                      <a href={`tel:${phone}`} className="text-xs font-bold text-blue-600 hover:underline">
-                        {phone}
+                    {customer.phone ? (
+                      <a href={`tel:${customer.phone}`} className="text-xs font-bold text-blue-600 hover:underline">
+                        {customer.phone}
                       </a>
                     ) : (
                       <span className="text-xs text-gray-400 font-medium">Telefon kiritilmagan</span>
@@ -143,7 +166,7 @@ export default function Orders({ store }) {
                   </div>
                 </div>
 
-                {/* Xarid qilingan narsalar */}
+                {/* Mahsulotlar */}
                 <div className="space-y-1 mb-4">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Mahsulotlar:</p>
                   {Array.isArray(order.items) && order.items.map((item, idx) => (
@@ -158,7 +181,7 @@ export default function Orders({ store }) {
                   ))}
                 </div>
 
-                {/* Boshqaruv tugmalari */}
+                {/* Tugmalar */}
                 {order.status === 'new' && (
                   <div className="flex gap-2 mt-auto pt-2">
                     <button
