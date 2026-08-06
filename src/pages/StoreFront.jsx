@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getProducts, createOrder } from '../api/backend';
 import ProductCard from '../components/ProductCard';
 import Cart from '../components/Cart'; // <-- Yangi Cart komponentini uladik
+import ProductModal from '../components/ProductModal'; // Yoki qaysi papkaga ochgan bo'lsangiz shunga qarab
 
 export default function StoreFront({ store }) {
   const [products, setProducts] = useState([]);
@@ -10,6 +11,7 @@ export default function StoreFront({ store }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [customerPhone, setCustomerPhone] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     if (store?.store_id) {
@@ -122,7 +124,9 @@ export default function StoreFront({ store }) {
                 key={product.id}
                 product={product}
                 onAddToCart={handleAddToCart}
+                onRemoveFromCart={handleRemoveFromCart} // <--- Shuni qo'shdik!
                 cartQuantity={cartItem ? cartItem.quantity : 0}
+                onClick={setSelectedProduct}            // <--- Shuni qo'shdik!
               />
             );
           })}
@@ -156,6 +160,14 @@ export default function StoreFront({ store }) {
         customerPhone={customerPhone}
         setCustomerPhone={setCustomerPhone}
         submitting={submitting}
+      />
+      {/* Mahsulot bosilganda chiqadigan oyna */}
+      <ProductModal 
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        cartQuantity={selectedProduct ? (cart.find(i => i.id === selectedProduct.id)?.quantity || 0) : 0}
+        onAddToCart={handleAddToCart}
+        onRemoveFromCart={handleRemoveFromCart}
       />
     </div>
   );
