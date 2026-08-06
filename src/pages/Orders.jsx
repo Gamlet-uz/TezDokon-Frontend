@@ -81,9 +81,13 @@ export default function Orders({ store }) {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => {
-            // Telefon raqamni har xil joylardan qidirib topish
-            const phone = order.customer?.phone || order.phone || order.customer_phone || order.phone_number;
-            const customerName = order.customer?.name || order.customer_name || "Noma'lum mijoz";
+            
+            // XATOLIKNI QIDIRISH UCHUN KONSOLGA CHIQARAMIZ:
+            console.log("Diqqat! Backenddan kelgan buyurtma obyekti:", order);
+
+            // Ehtimoliy barcha variantlarni tekshiramiz
+            const phone = order.customer?.phone || order.phone || order.customer_phone || order.phone_number || order.user?.phone || order.contact || order.client_phone;
+            const customerName = order.customer?.name || order.customer_name || order.name || order.user?.name || order.user?.first_name || order.client_name || "Noma'lum mijoz";
 
             return (
               <div key={order.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col">
