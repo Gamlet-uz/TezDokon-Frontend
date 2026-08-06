@@ -5,6 +5,25 @@ import AdminDashboard from './pages/AdminDashboard';
 import ManageProducts from './pages/ManageProducts';
 import Orders from './pages/Orders';
 
+// 👇 MANA SHU YERGA QO'SHILDI: Brauzerda test qilish uchun vaqtincha Telegram "aldamchi" kodi
+if (!window.Telegram?.WebApp?.initDataUnsafe?.user) {
+  window.Telegram = window.Telegram || {};
+  window.Telegram.WebApp = {
+    initDataUnsafe: {
+      user: {
+        id: 123456789, // O'zingizning haqiqiy ID raqamingizni yozishingiz ham mumkin
+        first_name: "Test Mijoz",
+        username: "test_user"
+      }
+    },
+    ready: () => {},
+    expand: () => {},
+    close: () => {},
+    MainButton: { show: () => {}, hide: () => {}, setText: () => {}, onClick: () => {} }
+  };
+}
+// 👆 -------------------------------------------------------------------------
+
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -82,7 +101,7 @@ export default function App() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
         <div className="bg-white p-6 rounded-2xl shadow-sm text-center max-w-sm">
-          <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3 font-bold text-xl">!</div>
+          <div className="w-12 h-12 bg-red-100 text-red-50 rounded-full flex items-center justify-center mx-auto mb-3 font-bold text-xl">!</div>
           <h2 className="text-lg font-bold text-gray-800 mb-1">Xatolik</h2>
           <p className="text-gray-600 text-sm mb-4">{error}</p>
         </div>
