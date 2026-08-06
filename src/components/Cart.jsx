@@ -34,7 +34,8 @@ export default function Cart({
           {cart.map((item) => (
             <div key={item.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
               <div>
-                <p className="font-medium text-sm text-gray-800">{item.title}</p>
+                {/* MA'LUMOT: item.title o'rniga item.name || item.title qilindi */}
+                <p className="font-medium text-sm text-gray-800">{item.name || item.title}</p>
                 <p className="text-xs text-gray-500">
                   {item.price.toLocaleString('uz-UZ')} x {item.quantity} = {(item.price * item.quantity).toLocaleString('uz-UZ')} so'm
                 </p>
