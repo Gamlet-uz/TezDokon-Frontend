@@ -3,14 +3,28 @@ import React from 'react';
 export default function ProductModal({ product, onClose, cartQuantity, onAddToCart, onRemoveFromCart }) {
   if (!product) return null;
 
-  // Backend'dan kelayotgan qoldiqni aniqlaymiz
-  const stock = product.stock ?? product.quantity;
+  // 1. Backend'dan kelayotgan qoldiqni barcha ehtimoliy nomlar bo'yicha qidiramiz
+  const rawStock = 
+    product.stock ?? 
+    product.quantity ?? 
+    product.count ?? 
+    product.amount ?? 
+    product.balance ?? 
+    product.qoldiq ?? 
+    product.remains ?? 
+    product.in_stock ?? 
+    product.total_quantity;
+
+  // Keyin uni raqam turiga o'tkazib olamiz (agar u "15" ko'rinishidagi string bo'lsa ham)
+  const stock = (rawStock !== null && rawStock !== undefined && !isNaN(Number(rawStock))) 
+    ? Number(rawStock) 
+    : null;
   
   // Mahsulot tugaganmi?
-  const isOutOfStock = stock !== null && stock !== undefined && stock <= 0;
+  const isOutOfStock = stock !== null && stock <= 0;
   
   // Yana qo'shish mumkinligini tekshiramiz
-  const canAddMore = stock === null || stock === undefined || cartQuantity < stock;
+  const canAddMore = stock === null || cartQuantity < stock;
 
   return (
     // Qora orqa fon (bosilganda yopiladi) va z-[60] menyu ustiga chiqishi uchun
@@ -46,14 +60,14 @@ export default function ProductModal({ product, onClose, cartQuantity, onAddToCa
           {product.name || product.title}
         </h2>
 
-        {/* 3. Narxi, Qoldiq va Savatga qo'shish qismi (Yonma-yon) */}
+        {/* 3. Narxi, Qoldiq va Savatga qo'shish qismi */}
         <div className="flex items-center justify-between mb-5 pb-5 border-b border-gray-100">
           <div className="flex flex-col">
             <p className="text-2xl text-blue-600 font-bold">
-              {Number(product.price).toLocaleString('uz-UZ')} so'm
+              {Number(product.price || 0).toLocaleString('uz-UZ')} so'm
             </p>
             <p className="text-xs text-gray-500 mt-1 font-medium">
-              Qoldiq: {stock !== null && stock !== undefined ? `${stock} ta` : 'Cheksiz'}
+              Qoldiq: {stock !== null ? `${stock} ta` : 'Cheksiz'}
             </p>
           </div>
 
@@ -89,12 +103,23 @@ export default function ProductModal({ product, onClose, cartQuantity, onAddToCa
         </div>
 
         {/* 4. Tavsif */}
-        <div>
+        <div className="mb-4">
           <h3 className="font-semibold text-gray-800 mb-2">Mahsulot haqida:</h3>
           <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
             {product.description || "Ushbu mahsulot uchun batafsil tavsif kiritilmagan."}
           </p>
         </div>
+
+        {/* 5. VAQTINCHA DEBUG BLOKI (Telefonda backend ma'lumotlarini ko'rish uchun) */}
+        {/* Qoldiq to'g'ri chiqsa yoki ishlatib bo'lgach, shunchaki quyidagi <details> blokini o'chirib tashlang */}
+        <details className="mt-4 pt-3 border-t border-gray-200">
+          <summary className="text-xs text-gray-400 cursor-pointer select-none">
+            🔍 Backend ma'lumotlarini ko'rish (Debug)
+          </summary>
+          <pre className="text-[10px] bg-gray-900 text-green-400 p-3 rounded-xl mt-2 overflow-x-auto max-h-40">
+            {JSON.stringify(product, null, 2)}
+          </pre>
+        </details>
 
       </div>
     </div>
