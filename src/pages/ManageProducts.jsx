@@ -29,7 +29,7 @@ export default function ManageProducts({ store }) {
       if (res.success) {
         setProducts(res.products || []);
       }
-    } catch (err) {
+   } catch (err) {
       console.error("Mahsulotlarni olishda xatolik:", err);
     } finally {
       setLoading(false);
