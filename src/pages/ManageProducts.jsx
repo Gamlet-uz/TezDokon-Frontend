@@ -41,12 +41,15 @@ export default function ManageProducts({ store }) {
   const handleOpenModal = (product = null) => {
     if (product) {
       setEditingProduct(product);
+      // Backenddan stock yoki quantity kelishini tekshiramiz
+      const currentStock = product.stock ?? product.quantity; 
+      
       setFormData({
         title: product.name || product.title || '',
         price: product.price || '',
         image_url: product.image_url || '',
         description: product.description || '',
-        stock: product.stock !== null && product.stock !== undefined ? product.stock : ''
+        stock: currentStock !== null && currentStock !== undefined ? currentStock : ''
       });
     } else {
       setEditingProduct(null);
@@ -56,13 +59,12 @@ export default function ManageProducts({ store }) {
   };
 
   const handleCloseModal = () => {
-    if (uploadingImage) return; // Rasm yuklanayotganda yopilmasin
+    if (uploadingImage) return;
     setIsModalOpen(false);
     setEditingProduct(null);
     setFormData({ title: '', price: '', image_url: '', description: '', stock: '' });
   };
 
-  // ImgBB ga rasmni yuklash
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -72,7 +74,6 @@ export default function ManageProducts({ store }) {
     uploadData.append('image', file);
 
     try {
-      // Sizning ImgBB API tokeningiz
       const API_KEY = 'b2d8a186f54db4ca35a446925ec3ebdf';
       const res = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
         method: 'POST',
@@ -108,8 +109,9 @@ export default function ManageProducts({ store }) {
         price: Number(formData.price),
         image_url: formData.image_url,
         description: formData.description,
-        // Agar stock bo'sh bo'lsa null yuboramiz (bu cheksiz degani)
-        stock: formData.stock !== '' ? Number(formData.stock) : null 
+        // Backend uchun ham stock, ham quantity yuboramiz
+        stock: formData.stock !== '' ? Number(formData.stock) : null,
+        quantity: formData.stock !== '' ? Number(formData.stock) : null, 
       };
 
       if (editingProduct) {
@@ -163,7 +165,7 @@ export default function ManageProducts({ store }) {
   }
 
   return (
-    <div className="max-w-md mx-auto p-4">
+    <div className="max-w-md mx-auto p-4 pb-24">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h1 className="text-lg font-bold text-gray-800">Mahsulotlar boshqaruvi</h1>
@@ -184,53 +186,57 @@ export default function ManageProducts({ store }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 justify-between"
-            >
-              <div className="w-14 h-14 bg-gray-50 rounded-xl overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center">
-                {product.image_url ? (
-                  // object-cover: Rasmni kartochkaga chiroyli qilib qirqib joylaydi
-                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-                ) : (
-                  <ImageIcon size={20} className="text-gray-300" />
-                )}
-              </div>
+          {products.map((product) => {
+            // Shu joyda stock ni hisoblaymiz
+            const productStock = product.stock ?? product.quantity;
+            
+            return (
+              <div
+                key={product.id}
+                className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 justify-between"
+              >
+                <div className="w-14 h-14 bg-gray-50 rounded-xl overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center">
+                  {product.image_url ? (
+                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageIcon size={20} className="text-gray-300" />
+                  )}
+                </div>
 
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 text-sm truncate">{product.name || product.title}</h3>
-                <p className="text-blue-600 font-bold text-xs mt-0.5">
-                  {Number(product.price).toLocaleString('uz-UZ')} so'm
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">
-                  Qoldiq: {product.stock !== null && product.stock !== undefined ? `${product.stock} ta` : 'Cheksiz'}
-                </p>
-              </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-800 text-sm truncate">{product.name || product.title}</h3>
+                  <p className="text-blue-600 font-bold text-xs mt-0.5">
+                    {Number(product.price).toLocaleString('uz-UZ')} so'm
+                  </p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">
+                    Qoldiq: {productStock !== null && productStock !== undefined ? `${productStock} ta` : 'Cheksiz'}
+                  </p>
+                </div>
 
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => handleOpenModal(product)}
-                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
-                >
-                  <Edit3 size={18} />
-                </button>
-                <button
-                  onClick={() => handleDelete(product.id)}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
-                >
-                  <Trash2 size={18} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleOpenModal(product)}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                  >
+                    <Edit3 size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(product.id)}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Qo'shish / Tahrirlash Modali */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl p-5 shadow-2xl relative max-h-[95vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto overscroll-contain">
             <div className="flex justify-between items-center mb-4 border-b pb-3">
               <h2 className="text-base font-bold text-gray-800">
                 {editingProduct ? "Mahsulotni tahrirlash" : "Yangi mahsulot qo'shish"}
@@ -242,13 +248,10 @@ export default function ManageProducts({ store }) {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               
-              {/* Rasm yuklash qismi */}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Mahsulot rasmi</label>
-                
                 {formData.image_url ? (
                   <div className="relative w-full h-40 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden group">
-                    {/* object-contain: Rasm ramkadan chiqib ketmaydi va to'liq ko'rinadi */}
                     <img 
                       src={formData.image_url} 
                       alt="Preview" 
