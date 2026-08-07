@@ -147,11 +147,15 @@ export default function StoreFront({ store }) {
   };
 
   if (loading) {
-    return <div className="p-5 text-center text-gray-500">Mahsulotlar yuklanmoqda...</div>;
+    return (
+      <div className="flex items-center justify-center py-20 text-gray-500">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-md mx-auto p-4">
+    <div className="max-w-md mx-auto p-4 pb-28">
       {/* Do'kon sarlavhasi */}
       <div className="mb-4">
         <h1 className="text-xl font-bold text-gray-800">{store?.name || "Do'kon"}</h1>
@@ -162,7 +166,7 @@ export default function StoreFront({ store }) {
       {products.length === 0 ? (
         <div className="text-center py-10 text-gray-400">Hozircha mahsulotlar mavjud emas.</div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 mb-20">
+        <div className="grid grid-cols-2 gap-3">
           {products.map((product) => {
             const cartItem = cart.find((i) => i.id === product.id);
             return (
@@ -179,9 +183,9 @@ export default function StoreFront({ store }) {
         </div>
       )}
 
-      {/* Savatcha paneli */}
+      {/* Savatcha paneli (z-[50] qilib to'g'irlandi) */}
       {cart.length > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 max-w-md mx-auto bg-blue-600 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between z-30">
+        <div className="fixed bottom-[75px] left-4 right-4 max-w-md mx-auto bg-blue-600 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between z-[40]">
           <div>
             <p className="text-xs text-blue-100">{totalItemsCount} ta mahsulot</p>
             <p className="font-bold text-lg">{totalAmount.toLocaleString('uz-UZ')} so'm</p>
@@ -195,7 +199,7 @@ export default function StoreFront({ store }) {
         </div>
       )}
 
-      {/* Cart (Savatcha) komponentiga formatlaydigan funksiyani uzatamiz */}
+      {/* Cart (Savatcha) komponenti */}
       <Cart 
         cart={cart}
         isCartOpen={isCartOpen}
@@ -204,7 +208,7 @@ export default function StoreFront({ store }) {
         onRemoveFromCart={handleRemoveFromCart}
         onCheckout={handleCheckout}
         customerPhone={customerPhone}
-        setCustomerPhone={handleSetPhone} // <--- Oddiy qiymat o'rniga maxsus formatlovchini beramiz
+        setCustomerPhone={handleSetPhone}
         submitting={submitting}
       />
       
