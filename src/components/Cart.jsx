@@ -31,34 +31,50 @@ export default function Cart({
 
         {/* Savatchadagi mahsulotlar ro'yxati */}
         <div className="space-y-3 mb-4">
-          {cart.map((item) => (
-            <div key={item.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
-              <div>
-                {/* MA'LUMOT: item.title o'rniga item.name || item.title qilindi */}
-                <p className="font-medium text-sm text-gray-800">{item.name || item.title}</p>
-                <p className="text-xs text-gray-500">
-                  {item.price.toLocaleString('uz-UZ')} x {item.quantity} = {(item.price * item.quantity).toLocaleString('uz-UZ')} so'm
-                </p>
+          {cart.map((item) => {
+            // Qoldiqni aniqlaymiz
+            const stock = item.stock ?? item.quantity;
+            const canAddMoreInCart = stock === null || stock === undefined || item.quantity < stock;
+
+            return (
+              <div key={item.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
+                <div>
+                  <p className="font-medium text-sm text-gray-800">{item.name || item.title}</p>
+                  <p className="text-xs text-gray-500">
+                    {item.price.toLocaleString('uz-UZ')} x {item.quantity} = {(item.price * item.quantity).toLocaleString('uz-UZ')} so'm
+                  </p>
+                  {stock !== null && stock !== undefined && (
+                    <p className="text-[10px] text-gray-400 mt-0.5">Qoldiq: {stock} ta</p>
+                  )}
+                </div>
+                
+                {/* Soni (+/-) tugmalari */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onRemoveFromCart(item.id)}
+                    className="w-7 h-7 bg-white border rounded-lg text-gray-600 font-bold flex items-center justify-center shadow-sm active:scale-95 transition"
+                  >
+                    -
+                  </button>
+                  <span className="text-sm font-semibold w-4 text-center">{item.quantity}</span>
+                  <button
+                    onClick={() => {
+                      if (canAddMoreInCart) {
+                        onAddToCart(item);
+                      } else {
+                        alert(`Kechirasiz, bazada faqat ${stock} ta mavjud!`);
+                      }
+                    }}
+                    className={`w-7 h-7 border rounded-lg font-bold flex items-center justify-center shadow-sm transition ${
+                      canAddMoreInCart ? 'bg-white text-gray-600 active:scale-95' : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                    }`}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-              
-              {/* Soni (+/-) tugmalari */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onRemoveFromCart(item.id)}
-                  className="w-7 h-7 bg-white border rounded-lg text-gray-600 font-bold flex items-center justify-center shadow-sm"
-                >
-                  -
-                </button>
-                <span className="text-sm font-semibold w-4 text-center">{item.quantity}</span>
-                <button
-                  onClick={() => onAddToCart(item)}
-                  className="w-7 h-7 bg-white border rounded-lg text-gray-600 font-bold flex items-center justify-center shadow-sm"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Telefon raqam kiritish */}
