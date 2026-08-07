@@ -4,6 +4,7 @@ import StoreFront from './pages/StoreFront';
 import AdminDashboard from './pages/AdminDashboard';
 import ManageProducts from './pages/ManageProducts';
 import Orders from './pages/Orders';
+import { Store, PackageSearch, ClipboardList, BarChart3 } from 'lucide-react'; // Ikonkalarni chaqiramiz
 
 // Brauzerda ochilganda avtomatik Telegram muhitini va Test foydalanuvchini yaratish
 if (typeof window !== 'undefined') {
@@ -107,41 +108,55 @@ export default function App() {
     );
   }
 
+  // Menyu ro'yxati (Faqat admin uchun mo'ljallangan qismlar)
+  const navItems = [
+    { id: 'products', label: 'Vitrina', icon: Store },
+    { id: 'manage_products', label: 'Mahsulotlar', icon: PackageSearch },
+    { id: 'orders', label: 'Buyurtmalar', icon: ClipboardList },
+    { id: 'admin', label: 'Statistika', icon: BarChart3 },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20"> 
+      {/* pb-20 juda muhim. Bu kontentni ekranning eng pastigacha yopishib qolmasligini ta'minlaydi */}
+
+      {/* Asosiy Ekran Qismi */}
+      <main>
+        {currentTab === 'products' && <StoreFront store={store} isAdmin={isAdmin} />}
+        {currentTab === 'admin' && <AdminDashboard store={store} />}
+        {currentTab === 'manage_products' && <ManageProducts store={store} />}
+        {currentTab === 'orders' && <Orders store={store} />}
+      </main>
+
+      {/* Zamonaviy Pastki Navigatsiya (Faqat Admin bo'lsa ko'rinadi) */}
       {isAdmin && (
-        <div className="bg-white border-b border-gray-200 sticky top-0 z-40 px-4 py-2 flex justify-around">
-          <button
-            onClick={() => setCurrentTab('products')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${currentTab === 'products' ? 'bg-blue-600 text-white' : 'text-gray-600 bg-gray-100'}`}
-          >
-            Vitrina
-          </button>
-          <button
-            onClick={() => setCurrentTab('manage_products')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${currentTab === 'manage_products' ? 'bg-blue-600 text-white' : 'text-gray-600 bg-gray-100'}`}
-          >
-            Mahsulotlar
-          </button>
-          <button
-            onClick={() => setCurrentTab('orders')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${currentTab === 'orders' ? 'bg-blue-600 text-white' : 'text-gray-600 bg-gray-100'}`}
-          >
-            Buyurtmalar
-          </button>
-          <button
-            onClick={() => setCurrentTab('admin')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${currentTab === 'admin' ? 'bg-blue-600 text-white' : 'text-gray-600 bg-gray-100'}`}
-          >
-            Statistika
-          </button>
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50">
+          <div className="flex justify-around items-center h-16 max-w-md mx-auto">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentTab === item.id;
+              
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentTab(item.id)}
+                  className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200 ${
+                    isActive ? 'text-blue-600 scale-110' : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <Icon 
+                    size={22} 
+                    className={`${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} 
+                  />
+                  <span className={`text-[10px] ${isActive ? 'font-bold' : 'font-medium'}`}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
-
-      {currentTab === 'products' && <StoreFront store={store} isAdmin={isAdmin} />}
-      {currentTab === 'admin' && <AdminDashboard store={store} />}
-      {currentTab === 'manage_products' && <ManageProducts store={store} />}
-      {currentTab === 'orders' && <Orders store={store} />}
     </div>
   );
 }
