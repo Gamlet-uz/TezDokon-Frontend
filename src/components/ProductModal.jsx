@@ -3,29 +3,41 @@ import React from 'react';
 export default function ProductModal({ product, onClose, cartQuantity, onAddToCart, onRemoveFromCart }) {
   if (!product) return null;
 
+  // Backend'dan kelayotgan qoldiqni aniqlaymiz
+  const stock = product.stock ?? product.quantity;
+  
+  // Mahsulot tugaganmi?
+  const isOutOfStock = stock !== null && stock !== undefined && stock <= 0;
+  
+  // Yana qo'shish mumkinligini tekshiramiz
+  const canAddMore = stock === null || stock === undefined || cartQuantity < stock;
+
   return (
-    // Qora orqa fon (bosilganda yopiladi)
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black bg-opacity-50 transition-opacity" onClick={onClose}>
+    // Qora orqa fon (bosilganda yopiladi) va z-[60] menyu ustiga chiqishi uchun
+    <div 
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm transition-opacity" 
+      onClick={onClose}
+    >
       
-      {/* Oq oyna */}
+      {/* Oq oyna - overscroll-contain orqa fon surilishini to'xtatadi */}
       <div 
-        className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 pb-8 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+        className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 pb-8 shadow-2xl relative max-h-[90vh] overflow-y-auto overscroll-contain"
         onClick={(e) => e.stopPropagation()} // Ichkariga bosganda yopilib ketmasligi uchun
       >
         {/* Yopish tugmasi (X) */}
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 bg-gray-100 text-gray-500 hover:text-gray-800 rounded-full w-8 h-8 flex items-center justify-center font-bold z-10"
+          className="absolute top-4 right-4 bg-white/80 backdrop-blur text-gray-600 hover:text-gray-900 rounded-full w-8 h-8 flex items-center justify-center font-bold z-10 shadow-sm"
         >
           ✕
         </button>
 
         {/* 1. Rasm */}
-        <div className="w-full h-64 bg-gray-100 rounded-2xl overflow-hidden mb-5">
+        <div className="w-full h-64 bg-gray-50 rounded-2xl overflow-hidden mb-5 flex items-center justify-center">
           {product.image_url ? (
-            <img src={product.image_url} alt={product.name || product.title} className="w-full h-full object-cover" />
+            <img src={product.image_url} alt={product.name || product.title} className="w-full h-full object-contain" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">Rasm yo'q</div>
+            <div className="text-gray-400">Rasm yo'q</div>
           )}
         </div>
 
@@ -34,29 +46,41 @@ export default function ProductModal({ product, onClose, cartQuantity, onAddToCa
           {product.name || product.title}
         </h2>
 
-        {/* 3. Narxi va Savatga qo'shish qismi (Yonma-yon) */}
+        {/* 3. Narxi, Qoldiq va Savatga qo'shish qismi (Yonma-yon) */}
         <div className="flex items-center justify-between mb-5 pb-5 border-b border-gray-100">
-          <p className="text-2xl text-blue-600 font-bold">
-            {Number(product.price).toLocaleString('uz-UZ')} so'm
-          </p>
+          <div className="flex flex-col">
+            <p className="text-2xl text-blue-600 font-bold">
+              {Number(product.price).toLocaleString('uz-UZ')} so'm
+            </p>
+            <p className="text-xs text-gray-500 mt-1 font-medium">
+              Qoldiq: {stock !== null && stock !== undefined ? `${stock} ta` : 'Cheksiz'}
+            </p>
+          </div>
 
-          <div className="w-32">
-            {cartQuantity > 0 ? (
+          <div className="w-32 shrink-0">
+            {isOutOfStock ? (
+              <button disabled className="w-full bg-gray-100 text-gray-400 font-semibold py-3 rounded-xl text-sm cursor-not-allowed">
+                Tugagan
+              </button>
+            ) : cartQuantity > 0 ? (
               <div className="flex items-center justify-between bg-gray-100 rounded-xl p-1 shadow-inner">
                 <button 
                   onClick={() => onRemoveFromCart(product.id)}
-                  className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm text-red-500 font-bold text-xl active:scale-90"
+                  className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm text-red-500 font-bold text-xl active:scale-90 transition"
                 >-</button>
                 <span className="font-bold text-lg text-gray-800">{cartQuantity}</span>
                 <button 
-                  onClick={() => onAddToCart(product)}
-                  className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm text-blue-600 font-bold text-xl active:scale-90"
+                  onClick={() => { if(canAddMore) onAddToCart(product); }}
+                  disabled={!canAddMore}
+                  className={`w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm font-bold text-xl transition ${
+                    canAddMore ? 'text-blue-600 active:scale-90' : 'text-gray-300 cursor-not-allowed'
+                  }`}
                 >+</button>
               </div>
             ) : (
               <button
                 onClick={() => onAddToCart(product)}
-                className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl text-sm transition-transform active:scale-95 shadow-md"
+                className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl text-sm transition-transform active:scale-95 shadow-md hover:bg-blue-700"
               >
                 + Qo'shish
               </button>
