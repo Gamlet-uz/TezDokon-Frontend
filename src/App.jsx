@@ -4,7 +4,11 @@ import StoreFront from './pages/StoreFront';
 import AdminDashboard from './pages/AdminDashboard';
 import ManageProducts from './pages/ManageProducts';
 import Orders from './pages/Orders';
-import { Store, PackageSearch, ClipboardList, BarChart3 } from 'lucide-react'; // Ikonkalarni chaqiramiz
+import { Store, PackageSearch, ClipboardList, BarChart3, ArrowLeft } from 'lucide-react';
+
+// Yangi komponentlarni chaqiramiz (Papkalar yo'liga e'tibor bering, o'zingiznikiga to'g'rilab qo'yasiz)
+import WelcomeScreen from './components/WelcomeScreen'; 
+import StoresList from './components/StoresList';       
 
 // Brauzerda ochilganda avtomatik Telegram muhitini va Test foydalanuvchini yaratish
 if (typeof window !== 'undefined') {
@@ -15,7 +19,6 @@ if (typeof window !== 'undefined') {
     window.Telegram.WebApp = {};
   }
   
-  // Agar foydalanuvchi ma'lumotlari bo'lmasa, majburiy test obyektini joylaymiz
   if (!window.Telegram.WebApp.initDataUnsafe?.user) {
     window.Telegram.WebApp.ready = () => {};
     window.Telegram.WebApp.expand = () => {};
@@ -38,6 +41,11 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentTab, setCurrentTab] = useState('products');
 
+  // Yangi qo'shilgan state'lar (Ekranni boshqarish uchun)
+  const [currentScreen, setCurrentScreen] = useState('welcome');
+  const [selectedStore, setSelectedStore] = useState(null);
+  const [initializingStore, setInitializingStore] = useState(false);
+
   useEffect(() => {
     async function setupApp() {
       try {
@@ -52,28 +60,19 @@ export default function App() {
         setUser(tgUser);
 
         if (urlStoreId) {
+          // Agar foydalanuvchi do'konning maxsus havolasi orqali kelsa (To'g'ridan to'g'ri vitrinaga o'tadi)
           const res = await getStore(urlStoreId);
           if (res.success) {
             setStore(res.store);
             setIsAdmin(tgUser && String(tgUser.id) === String(res.store.owner_id));
+            setCurrentScreen('main'); 
           } else {
             setError("Do'kon topilmadi");
           }
-        } else if (tgUser?.id) {
-          const res = await initStore(tgUser.id, {
-            first_name: tgUser.first_name,
-            username: tgUser.username,
-          });
-
-          if (res.success) {
-            setStore(res.store);
-            setIsAdmin(true);
-          } else {
-            setError("Do'konga ulanishda xatolik yuz berdi");
-          }
-        } else {
+        } else if (!tgUser?.id) {
           setError("Iltimos, ushbu ilovani Telegram orqali oching.");
         }
+        // Agar maxsus urlStoreId bo'lmasa, demak botga start berilgan. currentScreen 'welcome' holatida qoladi.
       } catch (err) {
         console.error("App init error:", err);
         setError("Tizimga ulanishda xatolik yuz berdi");
@@ -85,7 +84,36 @@ export default function App() {
     setupApp();
   }, []);
 
-  if (loading) {
+  // "Yangi do'kon yaratish" tugmasi bosilganda ishlaydigan funksiya
+  const handleCreateStore = async () => {
+    if (!user) {
+      alert("Telegram foydalanuvchi ma'lumotlari topilmadi!");
+      return;
+    }
+    
+    setInitializingStore(true);
+    try {
+      const res = await initStore(user.id, {
+        first_name: user.first_name,
+        username: user.username,
+      });
+
+      if (res.success) {
+        setStore(res.store);
+        setIsAdmin(true);
+        setCurrentScreen('main'); // Admin web app'ni ochamiz
+      } else {
+        alert("Do'konga ulanishda xatolik yuz berdi");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Xatolik yuz berdi.");
+    } finally {
+      setInitializingStore(false);
+    }
+  };
+
+  if (loading || initializingStore) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
@@ -108,7 +136,6 @@ export default function App() {
     );
   }
 
-  // Menyu ro'yxati (Faqat admin uchun mo'ljallangan qismlar)
   const navItems = [
     { id: 'products', label: 'Vitrina', icon: Store },
     { id: 'manage_products', label: 'Mahsulotlar', icon: PackageSearch },
@@ -117,46 +144,86 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20"> 
-      {/* pb-20 juda muhim. Bu kontentni ekranning eng pastigacha yopishib qolmasligini ta'minlaydi */}
+    <div className="min-h-screen bg-gray-50"> 
+      
+      {/* 1. XUSH KELIBSZ EKRANI */}
+      {currentScreen === 'welcome' && (
+        <WelcomeScreen 
+          onNavigate={(action) => {
+            if (action === 'create_store') handleCreateStore();
+            if (action === 'view_stores') setCurrentScreen('view_stores');
+          }} 
+        />
+      )}
 
-      {/* Asosiy Ekran Qismi */}
-      <main>
-        {currentTab === 'products' && <StoreFront store={store} isAdmin={isAdmin} />}
-        {currentTab === 'admin' && <AdminDashboard store={store} />}
-        {currentTab === 'manage_products' && <ManageProducts store={store} />}
-        {currentTab === 'orders' && <Orders store={store} />}
-      </main>
+      {/* 2. DO'KONLAR RO'YXATI EKRANI */}
+      {currentScreen === 'view_stores' && (
+        <StoresList 
+          onBack={() => setCurrentScreen('welcome')} 
+          onSelectStore={(selected) => {
+            setSelectedStore(selected);
+            setCurrentScreen('store_front');
+          }}
+        />
+      )}
 
-      {/* Zamonaviy Pastki Navigatsiya (Faqat Admin bo'lsa ko'rinadi) */}
-      {isAdmin && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50">
-          <div className="flex justify-around items-center h-16 max-w-md mx-auto">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentTab === item.id;
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentTab(item.id)}
-                  className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200 ${
-                    isActive ? 'text-blue-600 scale-110' : 'text-gray-400 hover:text-gray-600'
-                  }`}
-                >
-                  <Icon 
-                    size={22} 
-                    className={`${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} 
-                  />
-                  <span className={`text-[10px] ${isActive ? 'font-bold' : 'font-medium'}`}>
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
+      {/* 3. XARIDOR SIFATIDA BOSHQA DO'KONNI KO'RISH EKRANI */}
+      {currentScreen === 'store_front' && selectedStore && (
+        <div className="pb-10">
+          <div className="bg-white px-4 py-3 border-b shadow-sm sticky top-0 z-50">
+             <button 
+                onClick={() => setCurrentScreen('view_stores')} 
+                className="flex items-center gap-2 text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg active:scale-95 transition"
+             >
+                <ArrowLeft size={16} /> Ortga qaytish
+             </button>
           </div>
+          <StoreFront store={selectedStore} isAdmin={false} />
         </div>
       )}
+
+      {/* 4. ASOSIY ADMIN VA DO'KON EKRANI (Oldingi holat) */}
+      {currentScreen === 'main' && (
+        <div className="pb-20">
+          <main>
+            {currentTab === 'products' && <StoreFront store={store} isAdmin={isAdmin} />}
+            {currentTab === 'admin' && <AdminDashboard store={store} />}
+            {currentTab === 'manage_products' && <ManageProducts store={store} />}
+            {currentTab === 'orders' && <Orders store={store} />}
+          </main>
+
+          {/* Zamonaviy Pastki Navigatsiya (Faqat Admin bo'lsa ko'rinadi) */}
+          {isAdmin && (
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50">
+              <div className="flex justify-around items-center h-16 max-w-md mx-auto">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentTab === item.id;
+                  
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setCurrentTab(item.id)}
+                      className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200 ${
+                        isActive ? 'text-blue-600 scale-110' : 'text-gray-400 hover:text-gray-600'
+                      }`}
+                    >
+                      <Icon 
+                        size={22} 
+                        className={`${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} 
+                      />
+                      <span className={`text-[10px] ${isActive ? 'font-bold' : 'font-medium'}`}>
+                        {item.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }
