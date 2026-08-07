@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getProducts, addProduct, updateProduct, deleteProduct } from '../api/backend';
-import { Plus, Trash2, Edit3, Package, Image as ImageIcon, X } from 'lucide-react';
+import { Plus, Trash2, Edit3, Package, Image as ImageIcon, X, UploadCloud } from 'lucide-react';
 
 export default function ManageProducts({ store }) {
   const [products, setProducts] = useState([]);
@@ -8,12 +8,14 @@ export default function ManageProducts({ store }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
     price: '',
     image_url: '',
-    description: ''
+    description: '',
+    stock: '' // Mahsulot soni
   });
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function ManageProducts({ store }) {
       if (res.success) {
         setProducts(res.products || []);
       }
-   } catch (err) {
+    } catch (err) {
       console.error("Mahsulotlarni olishda xatolik:", err);
     } finally {
       setLoading(false);
@@ -40,22 +42,55 @@ export default function ManageProducts({ store }) {
     if (product) {
       setEditingProduct(product);
       setFormData({
-        title: product.name || product.title || '', // <--- Shu yer to'g'rilandi
+        title: product.name || product.title || '',
         price: product.price || '',
         image_url: product.image_url || '',
-        description: product.description || ''
+        description: product.description || '',
+        stock: product.stock !== null && product.stock !== undefined ? product.stock : ''
       });
     } else {
       setEditingProduct(null);
-      setFormData({ title: '', price: '', image_url: '', description: '' });
+      setFormData({ title: '', price: '', image_url: '', description: '', stock: '' });
     }
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
+    if (uploadingImage) return; // Rasm yuklanayotganda yopilmasin
     setIsModalOpen(false);
     setEditingProduct(null);
-    setFormData({ title: '', price: '', image_url: '', description: '' });
+    setFormData({ title: '', price: '', image_url: '', description: '', stock: '' });
+  };
+
+  // ImgBB ga rasmni yuklash
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    const uploadData = new FormData();
+    uploadData.append('image', file);
+
+    try {
+      // Sizning ImgBB API tokeningiz
+      const API_KEY = 'b2d8a186f54db4ca35a446925ec3ebdf';
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+        method: 'POST',
+        body: uploadData
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        setFormData(prev => ({ ...prev, image_url: data.data.display_url }));
+      } else {
+        alert("Rasmni yuklashda xatolik yuz berdi!");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Internet bilan aloqada xatolik yuz berdi.");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -72,11 +107,12 @@ export default function ManageProducts({ store }) {
         name: formData.title,
         price: Number(formData.price),
         image_url: formData.image_url,
-        description: formData.description
+        description: formData.description,
+        // Agar stock bo'sh bo'lsa null yuboramiz (bu cheksiz degani)
+        stock: formData.stock !== '' ? Number(formData.stock) : null 
       };
 
       if (editingProduct) {
-        // Tahrirlash
         const res = await updateProduct(store.store_id, editingProduct.id, payload);
         if (res.success) {
           fetchProducts();
@@ -85,7 +121,6 @@ export default function ManageProducts({ store }) {
           alert("Tahrirlashda xatolik yuz berdi.");
         }
       } else {
-        // Yangi qo'shish
         const res = await addProduct(store.store_id, payload);
         if (res.success) {
           fetchProducts();
@@ -96,7 +131,6 @@ export default function ManageProducts({ store }) {
       }
     } catch (err) {
       console.error(err);
-      // Server qaytargan asl xatolikni ushlab, ekranga chiqaramiz
       const errorMsg = err.response?.data?.message || err.response?.data?.error || err.message;
       alert("Xatolik sababi: " + errorMsg);
     } finally {
@@ -105,9 +139,7 @@ export default function ManageProducts({ store }) {
   };
 
   const handleDelete = async (productId) => {
-    if (!window.confirm("Haqiqatan ham ushbu mahsulotni o'chirmoqchimisiz?")) {
-      return;
-    }
+    if (!window.confirm("Haqiqatan ham ushbu mahsulotni o'chirmoqchimisiz?")) return;
 
     try {
       const res = await deleteProduct(store.store_id, productId);
@@ -132,7 +164,6 @@ export default function ManageProducts({ store }) {
 
   return (
     <div className="max-w-md mx-auto p-4">
-      {/* Sarlavha va Qo'shish Tugmasi */}
       <div className="flex justify-between items-center mb-4">
         <div>
           <h1 className="text-lg font-bold text-gray-800">Mahsulotlar boshqaruvi</h1>
@@ -146,18 +177,10 @@ export default function ManageProducts({ store }) {
         </button>
       </div>
 
-      {/* Mahsulotlar Ro'yxati */}
       {products.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-sm my-6">
           <Package size={40} className="mx-auto text-gray-300 mb-2" />
           <p className="text-gray-500 text-sm font-medium">Hozircha mahsulot yo'q</p>
-          <p className="text-gray-400 text-xs mt-1 mb-4">Yangi mahsulot qo'shish uchun yuqoridagi tugmani bosing</p>
-          <button
-            onClick={() => handleOpenModal()}
-            className="bg-blue-50 text-blue-600 font-semibold text-xs px-4 py-2 rounded-xl"
-          >
-            Mahsulot qo'shish
-          </button>
         </div>
       ) : (
         <div className="space-y-3">
@@ -166,20 +189,22 @@ export default function ManageProducts({ store }) {
               key={product.id}
               className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 justify-between"
             >
-              <div className="w-14 h-14 bg-gray-100 rounded-xl overflow-hidden shrink-0 relative">
+              <div className="w-14 h-14 bg-gray-50 rounded-xl overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center">
                 {product.image_url ? (
-                  <img src={product.image_url} alt={product.name || product.title} className="w-full h-full object-cover" /> // <--- Shu yer to'g'rilandi
+                  // object-cover: Rasmni kartochkaga chiroyli qilib qirqib joylaydi
+                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <ImageIcon size={20} />
-                  </div>
+                  <ImageIcon size={20} className="text-gray-300" />
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 text-sm truncate">{product.name || product.title}</h3> {/* <--- Shu yer to'g'rilandi */}
+                <h3 className="font-semibold text-gray-800 text-sm truncate">{product.name || product.title}</h3>
                 <p className="text-blue-600 font-bold text-xs mt-0.5">
                   {Number(product.price).toLocaleString('uz-UZ')} so'm
+                </p>
+                <p className="text-[10px] text-gray-500 mt-0.5">
+                  Qoldiq: {product.stock !== null && product.stock !== undefined ? `${product.stock} ta` : 'Cheksiz'}
                 </p>
               </div>
 
@@ -204,18 +229,55 @@ export default function ManageProducts({ store }) {
 
       {/* Qo'shish / Tahrirlash Modali */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4 border-b pb-2">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl p-5 shadow-2xl relative max-h-[95vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 border-b pb-3">
               <h2 className="text-base font-bold text-gray-800">
                 {editingProduct ? "Mahsulotni tahrirlash" : "Yangi mahsulot qo'shish"}
               </h2>
-              <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600">
-                <X size={20} />
+              <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600 bg-gray-50 p-1.5 rounded-full">
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              
+              {/* Rasm yuklash qismi */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Mahsulot rasmi</label>
+                
+                {formData.image_url ? (
+                  <div className="relative w-full h-40 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden group">
+                    {/* object-contain: Rasm ramkadan chiqib ketmaydi va to'liq ko'rinadi */}
+                    <img 
+                      src={formData.image_url} 
+                      alt="Preview" 
+                      className="w-full h-full object-contain p-2"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <label className="cursor-pointer bg-white text-gray-800 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
+                        Boshqa tanlash
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition ${uploadingImage ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}>
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      {uploadingImage ? (
+                        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+                      ) : (
+                        <UploadCloud className="w-8 h-8 text-gray-400 mb-2" />
+                      )}
+                      <p className="text-xs text-gray-500 font-medium">
+                        {uploadingImage ? "Yuklanmoqda..." : "Galereyadan rasm tanlash"}
+                      </p>
+                    </div>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
+                  </label>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Mahsulot nomi *</label>
                 <input
@@ -224,31 +286,32 @@ export default function ManageProducts({ store }) {
                   placeholder="Masalan: Pepsi 1.5L"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full border rounded-xl p-2.5 text-sm outline-none focus:border-blue-600"
+                  className="w-full border rounded-xl p-3 text-sm outline-none focus:border-blue-600 bg-gray-50 focus:bg-white transition"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Narxi (so'mda) *</label>
-                <input
-                  type="number"
-                  required
-                  placeholder="Masalan: 12000"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full border rounded-xl p-2.5 text-sm outline-none focus:border-blue-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Rasm havolasi (URL)</label>
-                <input
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  className="w-full border rounded-xl p-2.5 text-sm outline-none focus:border-blue-600"
-                />
+              <div className="flex gap-3">
+                <div className="w-1/2">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Narxi (so'm) *</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="12000"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    className="w-full border rounded-xl p-3 text-sm outline-none focus:border-blue-600 bg-gray-50 focus:bg-white transition"
+                  />
+                </div>
+                <div className="w-1/2">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Soni (Zaxira)</label>
+                  <input
+                    type="number"
+                    placeholder="Cheksiz"
+                    value={formData.stock}
+                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                    className="w-full border rounded-xl p-3 text-sm outline-none focus:border-blue-600 bg-gray-50 focus:bg-white transition"
+                  />
+                </div>
               </div>
 
               <div>
@@ -258,22 +321,23 @@ export default function ManageProducts({ store }) {
                   placeholder="Mahsulot haqida qisqacha ma'lumot..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full border rounded-xl p-2.5 text-sm outline-none focus:border-blue-600 resize-none"
+                  className="w-full border rounded-xl p-3 text-sm outline-none focus:border-blue-600 bg-gray-50 focus:bg-white resize-none transition"
                 ></textarea>
               </div>
 
-              <div className="pt-2 flex gap-2">
+              <div className="pt-3 flex gap-3">
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="w-1/2 bg-gray-100 text-gray-600 font-semibold py-2.5 rounded-xl text-sm"
+                  disabled={uploadingImage || submitting}
+                  className="w-1/2 bg-gray-100 text-gray-700 font-semibold py-3 rounded-xl text-sm hover:bg-gray-200 transition"
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="w-1/2 bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-sm shadow hover:bg-blue-700 disabled:opacity-50"
+                  disabled={uploadingImage || submitting}
+                  className="w-1/2 bg-blue-600 text-white font-semibold py-3 rounded-xl text-sm shadow hover:bg-blue-700 transition disabled:opacity-50"
                 >
                   {submitting ? "Saqlanmoqda..." : "Saqlash"}
                 </button>
