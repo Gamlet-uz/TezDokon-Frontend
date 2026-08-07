@@ -35,6 +35,19 @@ export default function StoreFront({ store }) {
   };
 
   const handleAddToCart = (product) => {
+    // 1. Mahsulotning umumiy qoldig'ini aniqlaymiz
+    const maxStock = product.stock ?? product.quantity;
+    
+    // 2. Savatdagi hozirgi miqdorni topamiz
+    const existingItem = cart.find((item) => item.id === product.id);
+    const currentQuantity = existingItem ? existingItem.quantity : 0;
+
+    // 3. Agar qoldiq cheklangan bo'lsa va joriy miqdor qoldiqqa yetgan bo'lsa, to'xtatamiz
+    if (maxStock !== null && maxStock !== undefined && currentQuantity >= maxStock) {
+      alert(`Kechirasiz, ushbu mahsulotdan bazada faqat ${maxStock} ta qolgan!`);
+      return; 
+    }
+
     setCart((prevCart) => {
       const existing = prevCart.find((item) => item.id === product.id);
       if (existing) {
