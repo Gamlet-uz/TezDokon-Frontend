@@ -15,8 +15,10 @@ export default function Cart({
   if (!isCartOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center">
-      <div className="bg-white w-full max-w-md rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
+    // z-50 o'rniga z-[99] qilindi, endi u hamma narsadan ustun turadi
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[99] flex items-end justify-center">
+      {/* pb-20 orqali pastki navigation bar bilan yopilib qolishining oldi olindi */}
+      <div className="bg-white w-full max-w-md rounded-t-3xl p-5 pb-24 max-h-[85vh] overflow-y-auto shadow-2xl">
         
         {/* Sarlavha va Yopish tugmasi */}
         <div className="flex justify-between items-center mb-4">
@@ -32,7 +34,6 @@ export default function Cart({
         {/* Savatchadagi mahsulotlar ro'yxati */}
         <div className="space-y-3 mb-4">
           {cart.map((item) => {
-            // Qoldiqni aniqlaymiz
             const stock = item.stock ?? item.quantity;
             const canAddMoreInCart = stock === null || stock === undefined || item.quantity < stock;
 
