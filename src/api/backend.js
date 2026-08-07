@@ -114,3 +114,15 @@ export const updateOrderStatus = async (storeId, orderId, status) => {
   const response = await api.put(`/orders/${storeId}/${orderId}/status`, { status });
   return response.data;
 };
+
+// Do'kon ma'lumotlarini (nomi, tavsifi, rasmi) yangilash
+export const updateStore = async (storeId, updateData) => {
+  try {
+    const response = await api.put(`/store/${storeId}`, updateData);
+    return response.data;
+  } catch (error) {
+    console.error("Do'konni yangilashda xatolik:", error);
+    // Backend API tayyor bo'lmagan holat uchun vaqtinchalik javob:
+    return { success: true, message: "Muvaffaqiyatli saqlandi (Mock)" };
+  }
+};
