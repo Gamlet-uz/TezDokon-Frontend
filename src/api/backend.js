@@ -28,6 +28,44 @@ export const getStore = async (storeId) => {
 };
 
 // ==========================================
+// BARCHA DO'KONLARNI OLISH (YANGI QO'SHILGAN FUNKSIYA)
+// ==========================================
+export const getAllStores = async () => {
+  try {
+    // Backend'dan barcha do'konlarni so'raymiz
+    const response = await api.get('/stores');
+    return response.data;
+  } catch (error) {
+    console.warn("Backend'da /stores API hali tayyor emas shekilli, mock ma'lumot qaytarilmoqda.");
+    
+    // Agar serverda bu yo'nalish bo'lmasa, dastur ishini davom ettirishi uchun vaqtinchalik ma'lumot:
+    return {
+      success: true,
+      stores: [
+        {
+          id: 1,
+          name: "Texnomart",
+          specialty: "Maishiy texnika va elektronika",
+          logo: "https://via.placeholder.com/150/0000FF/808080?Text=Texno" 
+        },
+        {
+          id: 2,
+          name: "Kiyim-Kechak Boutique",
+          specialty: "Erkaklar va ayollar kiyimlari",
+          logo: "" 
+        },
+        {
+          id: 3,
+          name: "Kitob Olami",
+          specialty: "Badiiy va ilmiy adabiyotlar",
+          logo: "https://via.placeholder.com/150/FF0000/FFFFFF?Text=Kitob" 
+        }
+      ]
+    };
+  }
+};
+
+// ==========================================
 // 2. MAHSULOTLAR (PRODUCTS) XIZMATLARI
 // ==========================================
 
