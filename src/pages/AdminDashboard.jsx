@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Edit3, X, Save, Store as StoreIcon, BarChart3, TrendingUp, Users } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Edit3, X, Save, Store as StoreIcon, BarChart3, TrendingUp, Users, Camera, Image as ImageIcon } from 'lucide-react';
 import { updateStore } from '../api/backend';
 
 export default function AdminDashboard({ store }) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
   
   // Do'kon ma'lumotlari uchun state
   const [formData, setFormData] = useState({
@@ -12,6 +13,52 @@ export default function AdminDashboard({ store }) {
     description: store?.description || store?.specialty || '',
     logo: store?.logo || store?.image_url || ''
   });
+
+  // Rasmni tanlash va qirqmasdan, faqat o'lchamini kichraytirib moslash
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      
+      img.onload = () => {
+        const MAX_SIZE = 500; // Maksimal eni yoki bo'yi (piksellarda)
+        let newWidth = img.width;
+        let newHeight = img.height;
+
+        // Agar rasm juda katta bo'lsa, proporsiyani saqlagan holda kichraytiramiz
+        if (newWidth > MAX_SIZE || newHeight > MAX_SIZE) {
+          const ratio = Math.min(MAX_SIZE / newWidth, MAX_SIZE / newHeight);
+          newWidth = Math.round(newWidth * ratio);
+          newHeight = Math.round(newHeight * ratio);
+        }
+
+        // Kichraytirilgan o'lchamda canvas yaratamiz
+        const canvas = document.createElement('canvas');
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        const ctx = canvas.getContext('2d');
+
+        // Shaffof PNG lar qora fonda bo'lib qolmasligi uchun oq fon beramiz
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Rasmni canvasga chizamiz (qirqilmaydi, to'liq tushadi)
+        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+        // Base64 formatiga o'tkazamiz va sifatini 80% qilamiz (serverga yengil borishi uchun)
+        const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+        
+        // State'ni yangilaymiz
+        setFormData({ ...formData, logo: base64Image });
+      };
+    };
+  };
 
   const handleSave = async () => {
     if (!formData.name) {
@@ -47,9 +94,10 @@ export default function AdminDashboard({ store }) {
         className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform mb-6"
       >
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border border-blue-100">
+          <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border border-blue-100 p-1">
             {formData.logo ? (
-              <img src={formData.logo} alt="Store Logo" className="w-full h-full object-cover" />
+              // Rasm qirqilmasligi uchun object-contain ishlatildi
+              <img src={formData.logo} alt="Store Logo" className="w-full h-full object-contain rounded-full" />
             ) : (
               <StoreIcon size={24} className="text-blue-500" />
             )}
@@ -111,6 +159,41 @@ export default function AdminDashboard({ store }) {
             </div>
 
             <div className="space-y-4">
+              
+              {/* Rasm yuklash qismi */}
+              <div className="flex flex-col items-center mb-2">
+                <label className="text-sm font-medium text-gray-700 mb-2 w-full text-left">
+                  Do'kon rasmi
+                </label>
+                <div 
+                  onClick={() => fileInputRef.current.click()}
+                  className="w-32 h-32 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer overflow-hidden relative group"
+                >
+                  {formData.logo ? (
+                    // Rasm qirqilmasligi uchun object-contain ishlatildi
+                    <img src={formData.logo} alt="Store logo" className="w-full h-full object-contain p-1" />
+                  ) : (
+                    <div className="flex flex-col items-center text-gray-400">
+                      <ImageIcon size={32} />
+                      <span className="text-xs mt-1">Galereya</span>
+                    </div>
+                  )}
+                  
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera size={28} className="text-white" />
+                  </div>
+                </div>
+                
+                {/* Yashirin fayl yuklash inputi */}
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  className="hidden" 
+                />
+              </div>
+
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-1.5 block">
                   Do'kon nomi
@@ -137,26 +220,10 @@ export default function AdminDashboard({ store }) {
                 ></textarea>
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                  Do'kon rasmi (URL havola)
-                </label>
-                <input 
-                  type="text" 
-                  value={formData.logo}
-                  onChange={(e) => setFormData({...formData, logo: e.target.value})}
-                  className="w-full border border-gray-200 rounded-xl p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition"
-                  placeholder="https://... rasm manzili"
-                />
-                <p className="text-xs text-gray-400 mt-1.5">
-                  Telegram yoki boshqa tarmoqdan rasmning manzilini nusxalab bu yerga tashlang.
-                </p>
-              </div>
-
               <button 
                 onClick={handleSave} 
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 mt-2 shadow-md active:scale-[0.98] transition-all disabled:opacity-70"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 mt-4 shadow-md active:scale-[0.98] transition-all disabled:opacity-70"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
