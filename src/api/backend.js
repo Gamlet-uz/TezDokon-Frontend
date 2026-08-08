@@ -104,3 +104,19 @@ export const updateOrderStatus = async (storeId, orderId, status) => {
   const response = await api.put(`/orders/${storeId}/${orderId}/status`, { status });
   return response.data;
 };
+
+
+// ==========================================
+// 4. FOYDALANUVCHILAR (USERS) XIZMATLARI
+// ==========================================
+
+// Foydalanuvchini ro'yxatdan o'tkazish (ProfileSetup.jsx orqali)
+export const registerUser = async (userData) => {
+  try {
+    const response = await api.post('/users', userData);
+    return response.data;
+  } catch (error) {
+    console.error("Foydalanuvchini saqlashda xatolik:", error);
+    return { success: false, message: error.message };
+  }
+};
