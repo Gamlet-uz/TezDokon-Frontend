@@ -108,19 +108,7 @@ export default function ProductModal({ product, onClose, cartQuantity, onAddToCa
           <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
             {product.description || "Ushbu mahsulot uchun batafsil tavsif kiritilmagan."}
           </p>
-        </div>
-
-        {/* 5. VAQTINCHA DEBUG BLOKI (Telefonda backend ma'lumotlarini ko'rish uchun) */}
-        {/* Qoldiq to'g'ri chiqsa yoki ishlatib bo'lgach, shunchaki quyidagi <details> blokini o'chirib tashlang */}
-        <details className="mt-4 pt-3 border-t border-gray-200">
-          <summary className="text-xs text-gray-400 cursor-pointer select-none">
-            🔍 Backend ma'lumotlarini ko'rish (Debug)
-          </summary>
-          <pre className="text-[10px] bg-gray-900 text-green-400 p-3 rounded-xl mt-2 overflow-x-auto max-h-40">
-            {JSON.stringify(product, null, 2)}
-          </pre>
-        </details>
-
+        </div>       
       </div>
     </div>
   );
