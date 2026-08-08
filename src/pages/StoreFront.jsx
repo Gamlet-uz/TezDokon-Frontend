@@ -5,7 +5,8 @@ import ProductCard from '../components/ProductCard';
 import Cart from '../components/Cart'; 
 import ProductModal from '../components/ProductModal'; 
 
-export default function StoreFront({ store }) {
+// userProfile prop sifatida qabul qilinmoqda
+export default function StoreFront({ store, userProfile }) {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,8 +18,8 @@ export default function StoreFront({ store }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest'); // 'newest', 'cheapest', 'expensive'
   
-  // Boshlang'ich qiymatni +998 qilib belgilaymiz
-  const [customerPhone, setCustomerPhone] = useState('+998 ');
+  // Boshlang'ich qiymatni userProfile dan olamiz
+  const [customerPhone, setCustomerPhone] = useState(userProfile?.phone || '+998 ');
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
@@ -155,10 +156,10 @@ export default function StoreFront({ store }) {
       const tg = window.Telegram?.WebApp;
       const tgUser = tg?.initDataUnsafe?.user;
 
-      // Ismni har qanday holatda ham aniqlash (Telegramdan yoki oddiy kiritishdan)
-      const customerName = tgUser?.first_name 
+      // Ismni birinchi navbatda userProfile dan olamiz, yo'q bo'lsa Telegram dan
+      const customerName = userProfile?.name || (tgUser?.first_name 
         ? `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() 
-        : (tgUser?.username ? `@${tgUser.username}` : "Mijoz");
+        : (tgUser?.username ? `@${tgUser.username}` : "Mijoz"));
 
       const orderData = {
         customer: {
