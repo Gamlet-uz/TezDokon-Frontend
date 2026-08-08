@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 // Railway'dagi backend serveringizning to'liq URL manzili
-// Agar domen nomini o'zgartirgan bo'lsangiz, shu yerni tahrirlaysiz
 const API_URL = 'https://tezdokon-backend-production.up.railway.app/api';
 
 const api = axios.create({
@@ -27,41 +26,32 @@ export const getStore = async (storeId) => {
   return response.data;
 };
 
-// ==========================================
-// BARCHA DO'KONLARNI OLISH (YANGI QO'SHILGAN FUNKSIYA)
-// ==========================================
+// BARCHA DO'KONLARNI OLISH (REAL BACKEND)
 export const getAllStores = async () => {
   try {
-    // Backend'dan barcha do'konlarni so'raymiz
+    // Avval /stores so'rovi yuboriladi
     const response = await api.get('/stores');
     return response.data;
   } catch (error) {
-    console.warn("Backend'da /stores API hali tayyor emas shekilli, mock ma'lumot qaytarilmoqda.");
-    
-    // Agar serverda bu yo'nalish bo'lmasa, dastur ishini davom ettirishi uchun vaqtinchalik ma'lumot:
-    return {
-      success: true,
-      stores: [
-        {
-          id: 1,
-          name: "Texnomart",
-          specialty: "Maishiy texnika va elektronika",
-          logo: "https://via.placeholder.com/150/0000FF/808080?Text=Texno" 
-        },
-        {
-          id: 2,
-          name: "Kiyim-Kechak Boutique",
-          specialty: "Erkaklar va ayollar kiyimlari",
-          logo: "" 
-        },
-        {
-          id: 3,
-          name: "Kitob Olami",
-          specialty: "Badiiy va ilmiy adabiyotlar",
-          logo: "https://via.placeholder.com/150/FF0000/FFFFFF?Text=Kitob" 
-        }
-      ]
-    };
+    // Agar /stores 404 bersa, zaxira sifatida /store/all ga so'rov yuboramiz
+    try {
+      const fallbackResponse = await api.get('/store/all');
+      return fallbackResponse.data;
+    } catch (fallbackError) {
+      console.error("Barcha do'konlarni olishda xatolik:", fallbackError);
+      return { success: false, stores: [] };
+    }
+  }
+};
+
+// Do'kon ma'lumotlarini (nomi, tavsifi, rasmi) yangilash
+export const updateStore = async (storeId, updateData) => {
+  try {
+    const response = await api.put(`/store/${storeId}`, updateData);
+    return response.data;
+  } catch (error) {
+    console.error("Do'konni yangilashda xatolik:", error);
+    return { success: false, message: "Do'konni saqlashda xatolik yuz berdi" };
   }
 };
 
@@ -113,16 +103,4 @@ export const getOrders = async (storeId) => {
 export const updateOrderStatus = async (storeId, orderId, status) => {
   const response = await api.put(`/orders/${storeId}/${orderId}/status`, { status });
   return response.data;
-};
-
-// Do'kon ma'lumotlarini (nomi, tavsifi, rasmi) yangilash
-export const updateStore = async (storeId, updateData) => {
-  try {
-    const response = await api.put(`/store/${storeId}`, updateData);
-    return response.data;
-  } catch (error) {
-    console.error("Do'konni yangilashda xatolik:", error);
-    // Backend API tayyor bo'lmagan holat uchun vaqtinchalik javob:
-    return { success: true, message: "Muvaffaqiyatli saqlandi (Mock)" };
-  }
 };
