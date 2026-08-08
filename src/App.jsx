@@ -6,9 +6,10 @@ import ManageProducts from './pages/ManageProducts';
 import Orders from './pages/Orders';
 import { Store, PackageSearch, ClipboardList, BarChart3, ArrowLeft } from 'lucide-react';
 
-// Yangi komponentlarni chaqiramiz (Papkalar yo'liga e'tibor bering, o'zingiznikiga to'g'rilab qo'yasiz)
+// Komponentlarni chaqiramiz
 import WelcomeScreen from './components/WelcomeScreen'; 
-import StoresList from './components/StoresList';       
+import StoresList from './components/StoresList';        
+import ProfileSetup from './components/ProfileSetup'; // <-- YANGI PROFIL OYNASI QO'SHILDI
 
 // Brauzerda ochilganda avtomatik Telegram muhitini va Test foydalanuvchini yaratish
 if (typeof window !== 'undefined') {
@@ -41,10 +42,13 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentTab, setCurrentTab] = useState('products');
 
-  // Yangi qo'shilgan state'lar (Ekranni boshqarish uchun)
+  // Ekranni boshqarish uchun state'lar
   const [currentScreen, setCurrentScreen] = useState('welcome');
   const [selectedStore, setSelectedStore] = useState(null);
   const [initializingStore, setInitializingStore] = useState(false);
+
+  // <-- YANGI QO'SHILGAN STATE (Foydalanuvchi profili uchun) -->
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
     async function setupApp() {
@@ -53,6 +57,12 @@ export default function App() {
         if (tg?.ready) tg.ready();
         if (tg?.expand) tg.expand();
 
+        // Xotiradan profilni qidiramiz
+        const savedProfile = localStorage.getItem('user_profile');
+        if (savedProfile) {
+          setUserProfile(JSON.parse(savedProfile));
+        }
+
         const queryParams = new URLSearchParams(window.location.search);
         const urlStoreId = queryParams.get('store_id');
 
@@ -60,7 +70,7 @@ export default function App() {
         setUser(tgUser);
 
         if (urlStoreId) {
-          // Agar foydalanuvchi do'konning maxsus havolasi orqali kelsa (To'g'ridan to'g'ri vitrinaga o'tadi)
+          // Agar foydalanuvchi do'konning maxsus havolasi orqali kelsa
           const res = await getStore(urlStoreId);
           if (res.success) {
             setStore(res.store);
@@ -72,7 +82,6 @@ export default function App() {
         } else if (!tgUser?.id) {
           setError("Iltimos, ushbu ilovani Telegram orqali oching.");
         }
-        // Agar maxsus urlStoreId bo'lmasa, demak botga start berilgan. currentScreen 'welcome' holatida qoladi.
       } catch (err) {
         console.error("App init error:", err);
         setError("Tizimga ulanishda xatolik yuz berdi");
@@ -84,7 +93,7 @@ export default function App() {
     setupApp();
   }, []);
 
-  // "Yangi do'kon yaratish" tugmasi bosilganda ishlaydigan funksiya
+  // "Yangi do'kon yaratish" tugmasi bosilganda
   const handleCreateStore = async () => {
     if (!user) {
       alert("Telegram foydalanuvchi ma'lumotlari topilmadi!");
@@ -101,7 +110,7 @@ export default function App() {
       if (res.success) {
         setStore(res.store);
         setIsAdmin(true);
-        setCurrentScreen('main'); // Admin web app'ni ochamiz
+        setCurrentScreen('main'); 
       } else {
         alert("Do'konga ulanishda xatolik yuz berdi");
       }
@@ -136,6 +145,14 @@ export default function App() {
     );
   }
 
+  // ==========================================
+  // ENG BIRINCHI OYNA: PROFILNI SOZLASh
+  // Agar userProfile bo'lmasa, dastur shu yerda to'xtab ProfileSetup ni ochadi
+  // ==========================================
+  if (!userProfile) {
+    return <ProfileSetup onComplete={(data) => setUserProfile(data)} />;
+  }
+
   const navItems = [
     { id: 'products', label: 'Vitrina', icon: Store },
     { id: 'manage_products', label: 'Mahsulotlar', icon: PackageSearch },
@@ -146,7 +163,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50"> 
       
-      {/* 1. XUSH KELIBSZ EKRANI */}
+      {/* 1. XUSH KELIBSZ EKRANI (Do'kon yaratish / Ko'rish) */}
       {currentScreen === 'welcome' && (
         <WelcomeScreen 
           onNavigate={(action) => {
@@ -178,15 +195,17 @@ export default function App() {
                 <ArrowLeft size={16} /> Ortga qaytish
              </button>
           </div>
-          <StoreFront store={selectedStore} isAdmin={false} />
+          {/* userProfile ni vitrinaga uzatamiz */}
+          <StoreFront store={selectedStore} isAdmin={false} userProfile={userProfile} />
         </div>
       )}
 
-      {/* 4. ASOSIY ADMIN VA DO'KON EKRANI (Oldingi holat) */}
+      {/* 4. ASOSIY ADMIN VA DO'KON EKRANI */}
       {currentScreen === 'main' && (
         <div className="pb-20">
           <main>
-            {currentTab === 'products' && <StoreFront store={store} isAdmin={isAdmin} />}
+            {/* userProfile ni vitrinaga uzatamiz */}
+            {currentTab === 'products' && <StoreFront store={store} isAdmin={isAdmin} userProfile={userProfile} />}
             {currentTab === 'admin' && <AdminDashboard store={store} />}
             {currentTab === 'manage_products' && <ManageProducts store={store} />}
             {currentTab === 'orders' && <Orders store={store} />}
