@@ -10,7 +10,7 @@ export default function WelcomeScreen({ onNavigate }) {
       </div>
       
       <h1 className="text-2xl font-bold text-gray-800 text-center mb-2">
-        TezDokon Platformasiga Xush Kelibsiz!
+        TezDo'kon Platformasiga Xush Kelibsiz!
       </h1>
       <p className="text-gray-500 text-center mb-10 text-sm">
         O'z onlayn do'koningizni yarating yoki mavjud do'konlardan xarid qiling.
