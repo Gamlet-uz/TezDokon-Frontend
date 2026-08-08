@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Image as ImageIcon, ChevronRight } from 'lucide-react';
-import { getAllStores } from '../api/backend'; // Backend'dan barcha do'konlarni oluvchi funksiya
+import { getAllStores } from '../api/backend';
 
 export default function StoresList({ onBack, onSelectStore }) {
   const [stores, setStores] = useState([]);
@@ -25,6 +25,13 @@ export default function StoresList({ onBack, onSelectStore }) {
     }
   };
 
+  // Faqat to'liq to'ldirilgan va sozlab bo'lingan do'konlarni saralab olamiz
+  const validStores = stores.filter((store) => {
+    const storeName = store.name || store.store_name;
+    // Nomi bo'sh bo'lmasligi va standart boshlang'ich nomda qolmagan bo'lishi kerak
+    return storeName && storeName.trim() !== '' && storeName !== "Mening Do'konim";
+  });
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Yuqori qism (Header) */}
@@ -44,46 +51,51 @@ export default function StoresList({ onBack, onSelectStore }) {
           <div className="flex justify-center py-10">
             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : stores.length === 0 ? (
+        ) : validStores.length === 0 ? (
           <div className="text-center py-10 text-gray-400">
             Hozircha hech qanday do'kon mavjud emas.
           </div>
         ) : (
-          stores.map((store) => (
-            <div 
-              key={store.id || store.store_id} 
-              onClick={() => onSelectStore && onSelectStore(store)}
-              className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform"
-            >
-              {/* Chap taraf: 1x1 Rasm (1/4 qismi) */}
-              <div className="w-[25%] aspect-square bg-gray-100 rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden">
-                {store.image_url || store.logo ? (
-                  <img 
-                    src={store.image_url || store.logo} 
-                    alt={store.name} 
-                    className="w-full h-full object-cover" 
-                  />
-                ) : (
-                  <ImageIcon size={24} className="text-gray-300" />
-                )}
-              </div>
+          validStores.map((store) => {
+            const storeName = store.name || store.store_name;
+            const storeImage = store.logo || store.image_url;
 
-              {/* O'ng taraf: Ma'lumotlar */}
-              <div className="flex-1 flex flex-col justify-center">
-                <h3 className="font-bold text-gray-800 text-base line-clamp-1">
-                  {store.name}
-                </h3>
-                <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">
-                  {store.description || store.specialty || "Do'kon tavsifi kiritilmagan"}
-                </p>
-              </div>
+            return (
+              <div 
+                key={store.id || store.store_id} 
+                onClick={() => onSelectStore && onSelectStore(store)}
+                className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform"
+              >
+                {/* Chap taraf: 1x1 Rasm (1/4 qismi) */}
+                <div className="w-[25%] aspect-square bg-gray-100 rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  {storeImage ? (
+                    <img 
+                      src={storeImage} 
+                      alt={storeName} 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <ImageIcon size={24} className="text-gray-300" />
+                  )}
+                </div>
 
-              {/* Strelka */}
-              <div className="text-gray-300 pr-1">
-                <ChevronRight size={20} />
+                {/* O'ng taraf: Ma'lumotlar */}
+                <div className="flex-1 flex flex-col justify-center">
+                  <h3 className="font-bold text-gray-800 text-base line-clamp-1">
+                    {storeName}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">
+                    {store.description || store.specialty || "Do'kon tavsifi kiritilmagan"}
+                  </p>
+                </div>
+
+                {/* Strelka */}
+                <div className="text-gray-300 pr-1">
+                  <ChevronRight size={20} />
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
