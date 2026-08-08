@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Search, X } from 'lucide-react';
 import { getProducts, createOrder } from '../api/backend';
 import ProductCard from '../components/ProductCard';
 import Cart from '../components/Cart'; 
@@ -10,6 +11,11 @@ export default function StoreFront({ store }) {
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Qidiruv va filtrlash uchun state'lar
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('newest'); // 'newest', 'cheapest', 'expensive'
   
   // Boshlang'ich qiymatni +998 qilib belgilaymiz
   const [customerPhone, setCustomerPhone] = useState('+998 ');
@@ -33,6 +39,42 @@ export default function StoreFront({ store }) {
       setLoading(false);
     }
   };
+
+  // Mahsulotlarni qidirish va saralash mantiqi
+  const processedProducts = useMemo(() => {
+    let result = [...(products || [])];
+
+    // 1. Qidiruv (nomi bo'yicha)
+    if (searchQuery.trim() !== '') {
+      result = result.filter(product => {
+        const productName = (product.name || product.title || '').toLowerCase();
+        return productName.includes(searchQuery.toLowerCase());
+      });
+    }
+
+    // 2. Saralash (Filtirlash)
+    result.sort((a, b) => {
+      const priceA = Number(a.price) || 0;
+      const priceB = Number(b.price) || 0;
+
+      if (sortBy === 'cheapest') {
+        return priceA - priceB; // Arzonlari oldinga
+      }
+      if (sortBy === 'expensive') {
+        return priceB - priceA; // Qimmatlari oldinga
+      }
+      if (sortBy === 'newest') {
+        // Vaqt bo'yicha saralash (agar created_at bo'lsa)
+        // Agar sanasi bo'lmasa ID bo'yicha (kattasi oldinga - oxirgi qo'shilgan) saralaymiz
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : a.id;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : b.id;
+        return dateB - dateA;
+      }
+      return 0;
+    });
+
+    return result;
+  }, [products, searchQuery, sortBy]);
 
   const handleAddToCart = (product) => {
     // 1. Mahsulotning umumiy qoldig'ini aniqlaymiz
@@ -169,18 +211,84 @@ export default function StoreFront({ store }) {
 
   return (
     <div className="max-w-md mx-auto p-4 pb-28">
-      {/* Do'kon sarlavhasi */}
-      <div className="mb-4">
-        <h1 className="text-xl font-bold text-gray-800">{store?.name || "Do'kon"}</h1>
-        <p className="text-xs text-gray-500">Eng sara mahsulotlar va tezkor yetkazib berish</p>
+      {/* Do'kon sarlavhasi va Qidiruv */}
+      <div className="mb-4 flex items-center justify-between min-h-[48px]">
+        {!showSearch ? (
+          <>
+            <div>
+              <h1 className="text-xl font-bold text-gray-800 line-clamp-1">{store?.name || "Do'kon"}</h1>
+              <p className="text-xs text-gray-500">Eng sara mahsulotlar va tezkor yetkazib berish</p>
+            </div>
+            <button 
+              onClick={() => setShowSearch(true)}
+              className="p-2.5 text-gray-600 bg-gray-100 rounded-full active:scale-95 transition flex-shrink-0"
+            >
+              <Search size={20} />
+            </button>
+          </>
+        ) : (
+          <div className="flex items-center gap-2 w-full animate-in fade-in duration-200">
+            <div className="flex-1 flex items-center bg-gray-100 rounded-xl px-3 py-2.5 border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <Search size={18} className="text-gray-400 flex-shrink-0" />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Qidirish..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-transparent border-none outline-none px-2 text-sm text-gray-700 placeholder-gray-400"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="text-gray-400 p-1 active:scale-90">
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+            <button 
+              onClick={() => {
+                setShowSearch(false);
+                setSearchQuery('');
+              }}
+              className="p-2 text-blue-600 font-medium text-sm whitespace-nowrap active:opacity-70"
+            >
+              Bekor qilish
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Saralash (Filter) tugmalari */}
+      <div className="mb-5 flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        {[
+          { id: 'newest', label: 'Eng yangi' },
+          { id: 'cheapest', label: 'Eng arzon' },
+          { id: 'expensive', label: 'Eng qimmat' }
+        ].map(sort => (
+          <button
+            key={sort.id}
+            onClick={() => setSortBy(sort.id)}
+            className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${
+              sortBy === sort.id 
+                ? 'bg-blue-600 text-white border-blue-600' 
+                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            {sort.label}
+          </button>
+        ))}
       </div>
 
       {/* Mahsulotlar ro'yxati (Grid) */}
-      {products.length === 0 ? (
-        <div className="text-center py-10 text-gray-400">Hozircha mahsulotlar mavjud emas.</div>
+      {processedProducts.length === 0 ? (
+        <div className="text-center py-12 text-gray-400 flex flex-col items-center">
+          <Search size={40} className="text-gray-300 mb-3" />
+          <p className="text-sm">
+            {searchQuery ? "Ushbu so'z bo'yicha mahsulot topilmadi" : "Hozircha mahsulotlar mavjud emas."}
+          </p>
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {products.map((product) => {
+          {processedProducts.map((product) => {
             const cartItem = cart.find((i) => i.id === product.id);
             return (
               <ProductCard
