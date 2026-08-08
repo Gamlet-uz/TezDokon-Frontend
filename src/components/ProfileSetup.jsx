@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { User, Phone, ArrowRight, Store } from 'lucide-react';
+import { registerUser } from '../api/backend'; // API dan funksiyani chaqiramiz
 
-export default function WelcomeScreen({ onComplete }) {
+export default function ProfileSetup({ onComplete }) { // Nomini faylga moslab ProfileSetup qildim
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+998 ');
   const [error, setError] = useState('');
@@ -48,7 +49,7 @@ export default function WelcomeScreen({ onComplete }) {
     setError(''); // Yozishni boshlaganda xatoni tozalash
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name.trim()) {
       setError("Iltimos, ismingizni kiriting!");
       return;
@@ -61,15 +62,36 @@ export default function WelcomeScreen({ onComplete }) {
 
     setLoading(true);
     
-    // Ma'lumotlarni saqlash va keyingi ekranga o'tkazish
-    setTimeout(() => {
-      // Odatda bu yerda ma'lumotlar localStorage'ga yoki backend'ga saqlanadi
-      const userData = { name, phone };
-      localStorage.setItem('user_profile', JSON.stringify(userData));
-      
-      onComplete(userData);
+    try {
+      const tg = window.Telegram?.WebApp;
+      const tgUser = tg?.initDataUnsafe?.user;
+
+      // Backendga ketadigan ma'lumotlar to'plami
+      const userData = {
+        telegram_id: tgUser?.id ? String(tgUser.id) : `web_${Date.now()}`,
+        name: name,
+        phone: phone,
+        username: tgUser?.username || ''
+      };
+
+      // 1. Bazaga (Backendga) ma'lumotlarni yuborish
+      const response = await registerUser(userData);
+
+      if (response && response.success !== false) {
+        // 2. Muvaffaqiyatli bo'lsa, Local xotirada saqlash
+        localStorage.setItem('user_profile', JSON.stringify(userData));
+        
+        // 3. Asosiy vitrina (StoreFront) ga o'tkazib yuborish
+        onComplete(userData);
+      } else {
+        setError(response?.message || "Xatolik yuz berdi. Qaytadan urinib ko'ring.");
+      }
+    } catch (err) {
+      console.error("Saqlashda xatolik:", err);
+      setError("Internet yoki server bilan muammo yuz berdi.");
+    } finally {
       setLoading(false);
-    }, 500); // Kichik pauza (juda tez o'tib ketmasligi uchun)
+    }
   };
 
   return (
