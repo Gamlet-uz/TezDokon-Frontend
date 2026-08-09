@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { User, Phone, ArrowRight, Store } from 'lucide-react';
-import { registerUser } from '../api/backend'; // API dan funksiyani chaqiramiz
+import { registerUser } from '../api/backend';
 
-export default function ProfileSetup({ onComplete }) { // Nomini faylga moslab ProfileSetup qildim
+export default function ProfileSetup({ onComplete }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+998 ');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Ilovaga kirganda Telegramdan ismni avtomatik olish
   useEffect(() => {
     try {
       const tg = window.Telegram?.WebApp;
@@ -23,7 +22,6 @@ export default function ProfileSetup({ onComplete }) { // Nomini faylga moslab P
     }
   }, []);
 
-  // Telefon raqamni chiroyli formatlash funksiyasi
   const handleSetPhone = (e) => {
     let val = e.target.value;
     let numbers = val.replace(/[^\d]/g, '');
@@ -46,7 +44,7 @@ export default function ProfileSetup({ onComplete }) { // Nomini faylga moslab P
     if (numbers.length > 10) formatted += ' ' + numbers.slice(10, 12);
 
     setPhone(formatted);
-    setError(''); // Yozishni boshlaganda xatoni tozalash
+    setError('');
   };
 
   const handleSubmit = async () => {
@@ -61,34 +59,44 @@ export default function ProfileSetup({ onComplete }) { // Nomini faylga moslab P
     }
 
     setLoading(true);
+    setError('');
     
     try {
       const tg = window.Telegram?.WebApp;
       const tgUser = tg?.initDataUnsafe?.user;
 
-      // Backendga ketadigan ma'lumotlar to'plami
       const userData = {
         telegram_id: tgUser?.id ? String(tgUser.id) : `web_${Date.now()}`,
-        name: name,
+        name: name.trim(),
         phone: phone,
         username: tgUser?.username || ''
       };
 
-      // 1. Bazaga (Backendga) ma'lumotlarni yuborish
+      // 1. Birinchi navbatda LocalStorage'ga saqlaymiz (Zaxira)
+      localStorage.setItem('user_profile', JSON.stringify(userData));
+
+      // 2. Backend'ga so'rov yuboramiz
       const response = await registerUser(userData);
 
+      // Backend muvaffaqiyatli bo'lsa ham, 404 yoki boshqa xatolik bersa ham 
+      // foydalanuvchini ushlab turmasdan keyingi sahifaga o'tkazamiz
       if (response && response.success !== false) {
-        // 2. Muvaffaqiyatli bo'lsa, Local xotirada saqlash
-        localStorage.setItem('user_profile', JSON.stringify(userData));
-        
-        // 3. Asosiy vitrina (StoreFront) ga o'tkazib yuborish
         onComplete(userData);
       } else {
-        setError(response?.message || "Xatolik yuz berdi. Qaytadan urinib ko'ring.");
+        console.warn("Backend'da saqlashda xatolik yuz berdi, lekin profil lokal saqlandi:", response?.message);
+        onComplete(userData); 
       }
     } catch (err) {
-      console.error("Saqlashda xatolik:", err);
-      setError("Internet yoki server bilan muammo yuz berdi.");
+      console.error("Saqlashda kutilmagan xatolik:", err);
+      // Xatolik bo'lgan taqdirda ham foydalanuvchini o'tkazib yuborish
+      const fallbackData = {
+        telegram_id: `web_${Date.now()}`,
+        name: name.trim(),
+        phone: phone,
+        username: ''
+      };
+      localStorage.setItem('user_profile', JSON.stringify(fallbackData));
+      onComplete(fallbackData);
     } finally {
       setLoading(false);
     }
@@ -96,12 +104,10 @@ export default function ProfileSetup({ onComplete }) { // Nomini faylga moslab P
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center px-6 py-12 relative overflow-hidden">
-      {/* Orqa fon bezaklari */}
       <div className="absolute top-[-50px] right-[-50px] w-40 h-40 bg-blue-100 rounded-full blur-3xl opacity-60"></div>
       <div className="absolute bottom-[-50px] left-[-50px] w-40 h-40 bg-purple-100 rounded-full blur-3xl opacity-60"></div>
 
       <div className="relative z-10 w-full max-w-md mx-auto">
-        {/* Logotip / Ikonka qismi */}
         <div className="flex flex-col items-center mb-10 text-center animate-slide-up">
           <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white mb-5 shadow-lg shadow-blue-200 transform rotate-3">
             <Store size={40} className="-rotate-3" />
@@ -112,10 +118,7 @@ export default function ProfileSetup({ onComplete }) { // Nomini faylga moslab P
           </p>
         </div>
 
-        {/* Forma qismi */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 space-y-5 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          
-          {/* Ism kiritish */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 space-y-5 animate-slide-up">
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block ml-1">
               Ism va Familiya
@@ -137,7 +140,6 @@ export default function ProfileSetup({ onComplete }) { // Nomini faylga moslab P
             </div>
           </div>
 
-          {/* Telefon raqam kiritish */}
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block ml-1">
               Telefon raqami
@@ -155,14 +157,12 @@ export default function ProfileSetup({ onComplete }) { // Nomini faylga moslab P
             </div>
           </div>
 
-          {/* Xatolik xabari */}
           {error && (
             <div className="text-red-500 text-sm font-medium text-center animate-fade-in">
               {error}
             </div>
           )}
 
-          {/* Davom etish tugmasi */}
           <button
             onClick={handleSubmit}
             disabled={loading}
