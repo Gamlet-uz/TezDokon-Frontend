@@ -9,7 +9,7 @@ import { Store, PackageSearch, ClipboardList, BarChart3, ArrowLeft } from 'lucid
 // Komponentlarni chaqiramiz
 import WelcomeScreen from './components/WelcomeScreen'; 
 import StoresList from './components/StoresList';        
-import ProfileSetup from './components/ProfileSetup'; // <-- YANGI PROFIL OYNASI QO'SHILDI
+import ProfileSetup from './components/ProfileSetup'; 
 
 // Brauzerda ochilganda avtomatik Telegram muhitini va Test foydalanuvchini yaratish
 if (typeof window !== 'undefined') {
@@ -47,7 +47,7 @@ export default function App() {
   const [selectedStore, setSelectedStore] = useState(null);
   const [initializingStore, setInitializingStore] = useState(false);
 
-  // <-- YANGI QO'SHILGAN STATE (Foydalanuvchi profili uchun) -->
+  // Foydalanuvchi profili uchun state
   const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
@@ -57,17 +57,31 @@ export default function App() {
         if (tg?.ready) tg.ready();
         if (tg?.expand) tg.expand();
 
-        // Xotiradan profilni qidiramiz
-        const savedProfile = localStorage.getItem('user_profile');
-        if (savedProfile) {
-          setUserProfile(JSON.parse(savedProfile));
+        // 1. Telegramdan hozirgi foydalanuvchini olamiz
+        const tgUser = tg?.initDataUnsafe?.user;
+        setUser(tgUser);
+
+        // 2. LocalStorage'dan eski profilni o'qiymiz
+        const savedProfileStr = localStorage.getItem('user_profile');
+        
+        if (savedProfileStr) {
+          const savedProfileData = JSON.parse(savedProfileStr);
+          
+          // 3. ASOSIY TEKSHIRUV: Saqlangan ID bilan hozirgi ID bir xilmi?
+          // Ikkalasini ham String ko'rinishida solishtiramiz, xatolik bo'lmasligi uchun
+          if (tgUser && savedProfileData.telegram_id && String(savedProfileData.telegram_id) !== String(tgUser.id)) {
+            // Agar ID lar har xil bo'lsa (boshqa akkauntdan kirilsa)
+            console.log("Boshqa akkauntdan kirildi. Eski profil tozalanmoqda...");
+            localStorage.removeItem('user_profile');
+            setUserProfile(null); // Profilni null qilamiz, shunda ProfileSetup ochiladi
+          } else {
+            // O'zining akkaunti, profilni to'g'ridan-to'g'ri o'rnatamiz
+            setUserProfile(savedProfileData);
+          }
         }
 
         const queryParams = new URLSearchParams(window.location.search);
         const urlStoreId = queryParams.get('store_id');
-
-        const tgUser = tg?.initDataUnsafe?.user;
-        setUser(tgUser);
 
         if (urlStoreId) {
           // Agar foydalanuvchi do'konning maxsus havolasi orqali kelsa
@@ -147,7 +161,8 @@ export default function App() {
 
   // ==========================================
   // ENG BIRINCHI OYNA: PROFILNI SOZLASh
-  // Agar userProfile bo'lmasa, dastur shu yerda to'xtab ProfileSetup ni ochadi
+  // Agar userProfile null bo'lsa (yoki boshqa ID dan kirilib o'chirilgan bo'lsa), 
+  // dastur shu yerda to'xtab ProfileSetup ni ochadi
   // ==========================================
   if (!userProfile) {
     return <ProfileSetup onComplete={(data) => setUserProfile(data)} />;
